@@ -19,7 +19,6 @@ class MazeScene(Scene):
         if not self.loaded:
             self.loaded = True
             # Agent spawns at (0, 0, 0). Objects centered at (5, -7.5, 0) so that agent spawns in corner
-            join(resource_dir, 'plane.xml')
             self.ground_plane_mjcf += [self._p.loadURDF(join(resource_dir, 'plane.xml'), basePosition=(5, -7.5, 0))]
             self.ground_plane_mjcf += [self._p.loadURDF(join(resource_dir, 'box.xml'), basePosition=(2, -7.5, 1.25))]
 

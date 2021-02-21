@@ -6,7 +6,7 @@ from hrl_pybullet_envs.ant_maze.maze_scene import MazeScene
 
 class AntMazeBulletEnv(AntBulletEnv):
     """
-    At evaluation time, we evaluate the agent only on its ability to reach (0,16). We define a “success”as being within
+    At evaluation time, we evaluate the agent only on its ability to reach (0,16). We define a “success” as being within
     an L2 distance of 5 from the target on the ultimate step of the episode. - Data efficient HRL
     """
 

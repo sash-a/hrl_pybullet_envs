@@ -1,0 +1,4 @@
+pybullet>=3.0.0
+numpy>=1.18.5
+gym>=0.17.1
+setuptools>=46.1.3

@@ -2,24 +2,19 @@ from os.path import join
 
 import numpy as np
 import pybullet
-from pybullet_envs.scene_abstract import Scene
 
 from hrl_pybullet_envs.assets import assets_dir
+from hrl_pybullet_envs.envs.sizeable_enclosed_scene import SizeableEnclosedScene
 
 
-class GatherScene(Scene):
+class GatherScene(SizeableEnclosedScene):
     def __init__(self, bullet_client, gravity, timestep, frame_skip, world_size: tuple, n_food: int, n_poison: int):
         """
         Creates an gather scene with food and poison spawned in on episode restart
 
         :param world_size: tuple of the x and y dimensions of the world must be less than 50
         """
-        super().__init__(bullet_client, gravity, timestep, frame_skip)
-        self.loaded = False
-        self.multiplayer = False
-        self.size = world_size
-
-        self.ground_plane_mjcf = []
+        super().__init__(bullet_client, gravity, timestep, frame_skip, world_size)
         self.food = {}
         self.poison = {}
         self.n_food = n_food
@@ -31,29 +26,12 @@ class GatherScene(Scene):
         self.rs = rs
 
     def episode_restart(self, bullet_client):
-        self._p = bullet_client
-        Scene.episode_restart(self, bullet_client)
-        if not self.loaded:
-            self.loaded = True
-            self.ground_plane_mjcf += [self._p.loadURDF(join(assets_dir, 'plane.xml'), (0, 0, 0))]
-            self.ground_plane_mjcf += [self._p.loadURDF(join(assets_dir, 'wall.xml'), (0, self.size[1] / 2, 2.5))]
-            self.ground_plane_mjcf += [self._p.loadURDF(join(assets_dir, 'wall.xml'), (0, -self.size[1] / 2, 2.5))]
-            self.ground_plane_mjcf += [self._p.loadURDF(join(assets_dir, 'wall.xml'),
-                                                        (self.size[0] / 2, 0, 2.5),
-                                                        pybullet.getQuaternionFromEuler((0, 0, np.pi / 2)))]
-            self.ground_plane_mjcf += [self._p.loadURDF(join(assets_dir, 'wall.xml'),
-                                                        (-self.size[0] / 2, 0, 2.5),
-                                                        pybullet.getQuaternionFromEuler((0, 0, np.pi / 2)))]
+        super().episode_restart(bullet_client)
 
-            for i in self.ground_plane_mjcf:
-                self._p.changeDynamics(i, -1, lateralFriction=0.8, restitution=0.5)
-                self._p.configureDebugVisualizer(pybullet.COV_ENABLE_PLANAR_REFLECTION, i)
-
-            # TODO reloading this is probably a good idea, but it can take a while
-            for i in range(self.n_food):
-                self.spawn_random_food()
-            for i in range(self.n_poison):
-                self.spawn_random_poison()
+        for i in range(self.n_food):
+            self.spawn_random_food()
+        for i in range(self.n_poison):
+            self.spawn_random_poison()
 
     def _spawn_random_on_plane(self, urdf_path: str):
         size = np.array(self.size) - 1

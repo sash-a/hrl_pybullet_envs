@@ -1,7 +1,7 @@
 import gym
 
-from hrl_pybullet_envs.ant_gather.env import AntGatherBulletEnv
-from hrl_pybullet_envs.ant_maze.env import AntMazeBulletEnv, AntMazeBulletEnv
+from hrl_pybullet_envs.envs.ant_gather.env import AntGatherBulletEnv
+from hrl_pybullet_envs.envs.ant_maze.env import AntMazeBulletEnv
 
 __all__ = [AntGatherBulletEnv, AntMazeBulletEnv]
 

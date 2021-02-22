@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 from pybullet_envs.gym_locomotion_envs import AntBulletEnv
 
-from hrl_pybullet_envs.ant_gather.scene import GatherScene
+from hrl_pybullet_envs.envs.ant_gather.scene import GatherScene
 
 
 class AntGatherBulletEnv(AntBulletEnv):

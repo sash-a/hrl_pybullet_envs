@@ -1,7 +1,8 @@
 import numpy as np
+import pybullet
 from pybullet_envs.gym_locomotion_envs import AntBulletEnv
 
-from hrl_pybullet_envs.ant_maze.scene import MazeScene
+from hrl_pybullet_envs.envs.ant_maze.scene import MazeScene
 
 
 class AntMazeBulletEnv(AntBulletEnv):
@@ -15,8 +16,10 @@ class AntMazeBulletEnv(AntBulletEnv):
         self.walk_target_x = 0
         self.walk_target_y = -15
 
+        # self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -8, -8, 0
+
     def create_single_player_scene(self, bullet_client):
-        self.stadium_scene = MazeScene(bullet_client, gravity=9.8, timestep=0.0165 / 4, frame_skip=4)
+        self.stadium_scene = MazeScene(bullet_client, 9.8, 0.0165 / 4, 4, (20, 20))
         return self.stadium_scene
 
     def step(self, a):
@@ -93,8 +96,13 @@ class AntMazeBulletEnv(AntBulletEnv):
         survive_reward = 1.0
         rewards = [forward_reward - ctrl_cost + survive_reward]
         if -5 < dist_after < 5:
-            self.rewards += 1000
+            rewards += 1000
 
         return state, sum(rewards), bool(done), {'dist':        dist_after,
                                                  'forward_rew': forward_reward,
                                                  'ctrl_cost':   ctrl_cost}
+
+    def reset(self):
+        super().reset()
+        # self.stadium_scene._p.resetBasePositionAndOrientation(self.robot.objects[0], (-8, -8, 10),
+        #                                                       pybullet.getQuaternionFromEuler(self.robot.body_rpy))

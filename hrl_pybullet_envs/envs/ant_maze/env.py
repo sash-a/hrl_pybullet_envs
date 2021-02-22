@@ -16,8 +16,6 @@ class AntMazeBulletEnv(AntBulletEnv):
         self.walk_target_x = 0
         self.walk_target_y = -15
 
-        # self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -8, -8, 0
-
     def create_single_player_scene(self, bullet_client):
         self.stadium_scene = MazeScene(bullet_client, 9.8, 0.0165 / 4, 4, (20, 20))
         return self.stadium_scene
@@ -104,5 +102,3 @@ class AntMazeBulletEnv(AntBulletEnv):
 
     def reset(self):
         super().reset()
-        # self.stadium_scene._p.resetBasePositionAndOrientation(self.robot.objects[0], (-8, -8, 10),
-        #                                                       pybullet.getQuaternionFromEuler(self.robot.body_rpy))

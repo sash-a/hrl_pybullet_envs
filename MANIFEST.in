@@ -1,1 +1,1 @@
-include hrl_pybullet_envs/resources/*.xml
+include hrl_pybullet_envs/assets/*.xml

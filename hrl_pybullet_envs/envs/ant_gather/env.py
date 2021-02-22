@@ -37,10 +37,19 @@ class AntGatherBulletEnv(AntBulletEnv):
         self.n_poison = n_poison
         self.world_size = world_size
 
+        # removing angle to target and adding in yaw and food readings
+        self.observation_space = self.robot.observation_space
+        self.observation_space.shape = (self.observation_space.shape[0] - 2 + 1 + 2 * n_bins,)
+
     def create_single_player_scene(self, bullet_client):
         self.stadium_scene = GatherScene(bullet_client, 9.8, 0.0165 / 4, 4, self.world_size, self.n_food, self.n_poison)
         self.stadium_scene.seed(self.np_random)
         return self.stadium_scene
+
+    def reset(self):
+        r = super().reset()
+        fr, pr = self.get_readings()
+        return np.concatenate([r[:1], r[3:8], [self.robot.body_rpy[2]], r[8:], fr, pr])
 
     def step(self, a):
         self.robot.apply_action(a)

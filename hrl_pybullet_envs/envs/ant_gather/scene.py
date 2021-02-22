@@ -26,16 +26,23 @@ class GatherScene(SizeableEnclosedScene):
         self.rs = rs
 
     def episode_restart(self, bullet_client):
+        if not self.loaded:
+            for i in range(self.n_food):
+                self.spawn_random_food()
+            for i in range(self.n_poison):
+                self.spawn_random_poison()
         super().episode_restart(bullet_client)
 
-        for i in range(self.n_food):
-            self.spawn_random_food()
-        for i in range(self.n_poison):
-            self.spawn_random_poison()
+        for obj_id in list(self.food.keys()) + list(self.poison.keys()):
+            self._p.resetBasePositionAndOrientation(obj_id, self._random_on_plane(),
+                                                    pybullet.getQuaternionFromEuler((0, 0, 0)))
+
+    def _random_on_plane(self):
+        size = np.array(self.size) - 1
+        return (self.rs.rand(2) * size - size / 2).tolist() + [0.1]
 
     def _spawn_random_on_plane(self, urdf_path: str):
-        size = np.array(self.size) - 1
-        pos = (self.rs.rand(2) * size - size / 2).tolist() + [0.1]
+        pos = self._random_on_plane()
         obj_id = self._p.loadURDF(urdf_path, basePosition=pos)
         self._p.configureDebugVisualizer(pybullet.COV_ENABLE_PLANAR_REFLECTION, obj_id)
 
@@ -52,8 +59,9 @@ class GatherScene(SizeableEnclosedScene):
         self._p.configureDebugVisualizer(pybullet.COV_ENABLE_PLANAR_REFLECTION, poison_id)
 
     # TODO:
-    #  optional respawning
     #  don't spawn food to close to agent
+    #  could simply move the food instead of destroying it
+    #  optional respawning - delete forever
     def destroy_and_respawn(self, obj_id):
         """returns -1 if id was poison and 1 if id was food."""
         if obj_id in self.food:

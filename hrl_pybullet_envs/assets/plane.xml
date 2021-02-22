@@ -9,14 +9,14 @@
     <link name="floor">
         <visual>
             <geometry>
-                <box size="20 20 0.01"/>
+                <box size="50 50 0.01"/>
                 <origin rpy="0 0 0" xyz="0 0 0"/>
             </geometry>
             <material name="grey"/>
         </visual>
         <collision>
             <geometry>
-                <box size="20 20 0.01"/>
+                <box size="50 50 0.01"/>
                 <origin rpy="0 0 0" xyz="0 0 0"/>
             </geometry>
         </collision>

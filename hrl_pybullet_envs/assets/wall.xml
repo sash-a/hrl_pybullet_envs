@@ -9,14 +9,14 @@
     <link name="wall">
         <visual>
             <geometry>
-                <box size="20 0.1 5"/>
+                <box size="50 0.1 5"/>
                 <origin rpy="0 0 0" xyz="0 0 0"/>
             </geometry>
             <material name="grey"/>
         </visual>
         <collision>
             <geometry>
-                <box size="20 0.1 5"/>
+                <box size="50 0.1 5"/>
                 <origin rpy="0 0 0" xyz="0 0 0"/>
             </geometry>
         </collision>

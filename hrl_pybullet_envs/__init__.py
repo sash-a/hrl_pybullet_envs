@@ -1,9 +1,13 @@
 import gym
 
+from hrl_pybullet_envs.ant_gather.env import AntGatherBulletEnv
 from hrl_pybullet_envs.ant_maze.env import AntMazeBulletEnv, AntMazeBulletEnv
 
-gym.envs.register(
-    id=f'{AntMazeBulletEnv.__name__}-v0',
-    entry_point=f'{AntMazeBulletEnv.__module__}:{AntMazeBulletEnv.__name__}',
-    max_episode_steps=2000,
-)
+__all__ = [AntGatherBulletEnv, AntMazeBulletEnv]
+
+for env in __all__:
+    gym.envs.register(
+        id=f'{env.__name__}-v0',
+        entry_point=f'{env.__module__}:{env.__name__}',
+        max_episode_steps=2000,
+    )

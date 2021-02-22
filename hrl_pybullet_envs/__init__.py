@@ -1,6 +1,6 @@
 import gym
 
-from hrl_pybullet_envs.ant_maze.ant_maze_env import AntMazeBulletEnv, AntMazeBulletEnv
+from hrl_pybullet_envs.ant_maze.env import AntMazeBulletEnv, AntMazeBulletEnv
 
 gym.envs.register(
     id=f'{AntMazeBulletEnv.__name__}-v0',

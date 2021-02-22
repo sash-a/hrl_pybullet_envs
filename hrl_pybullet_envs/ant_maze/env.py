@@ -1,7 +1,7 @@
 import numpy as np
 from pybullet_envs.gym_locomotion_envs import AntBulletEnv
 
-from hrl_pybullet_envs.ant_maze.maze_scene import MazeScene
+from hrl_pybullet_envs.ant_maze.scene import MazeScene
 
 
 class AntMazeBulletEnv(AntBulletEnv):

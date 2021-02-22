@@ -16,8 +16,8 @@ class GatherScene(Scene):
         self.size = (20, 20)
 
         self.ground_plane_mjcf = []
-        self.food_ids = set()
-        self.poison_ids = set()
+        self.food = {}
+        self.poison = {}
         self.n_food = n_food
         self.n_poison = n_poison
 
@@ -50,29 +50,30 @@ class GatherScene(Scene):
 
     def _spawn_random_on_plane(self, urdf_path: str):
         size = np.array(self.size) - 1
-        obj_id = self._p.loadURDF(urdf_path, basePosition=(self.rs.rand(2) * size - size / 2).tolist() + [0.1])
+        pos = (self.rs.rand(2) * size - size / 2).tolist() + [0.1]
+        obj_id = self._p.loadURDF(urdf_path, basePosition=pos)
         self._p.configureDebugVisualizer(pybullet.COV_ENABLE_PLANAR_REFLECTION, obj_id)
 
-        return obj_id
+        return obj_id, pos
 
     def spawn_random_food(self):
-        food_id = self._spawn_random_on_plane(join(assets_dir, 'food.xml'))
-        self.food_ids.add(food_id)
+        food_id, pos = self._spawn_random_on_plane(join(assets_dir, 'food.xml'))
+        self.food[food_id] = pos
         self._p.configureDebugVisualizer(pybullet.COV_ENABLE_PLANAR_REFLECTION, food_id)
 
     def spawn_random_poison(self):
-        poison_id = self._spawn_random_on_plane(join(assets_dir, 'poison.xml'))
-        self.poison_ids.add(poison_id)
+        poison_id, pos = self._spawn_random_on_plane(join(assets_dir, 'poison.xml'))
+        self.poison[poison_id] = pos
         self._p.configureDebugVisualizer(pybullet.COV_ENABLE_PLANAR_REFLECTION, poison_id)
 
     def destroy_and_respawn(self, obj_id):
         """returns -1 if id was poison and 1 if id was food."""
-        if obj_id in self.food_ids:
-            self.food_ids.remove(obj_id)
+        if obj_id in self.food:
+            self.food.pop(obj_id)
             self.spawn_random_food()
             rew = 1
-        elif obj_id in self.poison_ids:
-            self.poison_ids.remove(obj_id)
+        elif obj_id in self.poison:
+            self.poison.pop(obj_id)
             self.spawn_random_poison()
             rew = -1
         else:
@@ -84,3 +85,4 @@ class GatherScene(Scene):
             print(f'destroyed and respawned! ({rew})')
 
         return rew
+

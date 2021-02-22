@@ -20,13 +20,13 @@ class AntMazeBulletEnv(AntBulletEnv):
         return self.stadium_scene
 
     def step(self, a):
-        pos_before = self.robot.body_xyz
+        pos_before = self.robot_body.pose().xyz()
         if not self.scene.multiplayer:  # if multiplayer, action first applied to all robots, then global step() called, then _step() for all robots with the same actions
             self.robot.apply_action(a)
             self.scene.global_step()
 
         state = self.robot.calc_state()  # also calculates self.joints_at_limit
-        pos_after = self.robot.body_xyz
+        pos_after = self.robot_body.pose().xyz()
 
         # state[0] is body height above ground, body_rpy[1] is pitch
         self._alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[1]))

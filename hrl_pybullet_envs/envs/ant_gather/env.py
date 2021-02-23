@@ -1,5 +1,6 @@
 import math
 import warnings
+from typing import Dict
 
 import numpy as np
 from pybullet_envs.gym_locomotion_envs import AntBulletEnv
@@ -18,6 +19,7 @@ class AntGatherBulletEnv(AntBulletEnv):
                  n_bins=10,
                  sensor_range=8.,
                  sensor_span=np.pi,
+                 robot_coll_dist=1,  # this might be too easy
                  robot_object_spacing=2.,
                  dying_cost=-10,
                  respawn=True,
@@ -32,6 +34,7 @@ class AntGatherBulletEnv(AntBulletEnv):
         self.sensor_span = sensor_span
         self.sensor_range = sensor_range
         self.dying_cost = dying_cost
+        self.robot_coll_dist = robot_coll_dist
 
         # scene related
         self.stadium_scene: GatherScene = None
@@ -47,13 +50,15 @@ class AntGatherBulletEnv(AntBulletEnv):
 
     def create_single_player_scene(self, bullet_client):
         self.stadium_scene = GatherScene(bullet_client, 9.8, 0.0165 / 4, 4,
-                                         self.world_size, self.n_food, self.n_poison, self.spacing, False)
+                                         self.world_size, self.n_food, self.n_poison, self.spacing, self.respawn)
         self.stadium_scene.seed(self.np_random)
         return self.stadium_scene
 
     def reset(self):
         r = super().reset()
-        fr, pr = self.get_readings()
+
+        dists = {obj_id: self.sq_dist_robot(pos) for obj_id, pos in self.stadium_scene.all_items.items()}
+        fr, pr = self.get_readings(dists)
         return np.concatenate([r[:1], r[3:8], [self.robot.body_rpy[2]], r[8:], fr, pr])
 
     def step(self, a):
@@ -61,8 +66,19 @@ class AntGatherBulletEnv(AntBulletEnv):
         self.scene.global_step()
 
         state = self.robot.calc_state()  # also calculates self.joints_at_limit
+
+        # could do a more efficient method, but with around 20 items I wonder if it's worth it?
+        dists = {obj_id: self.sq_dist_robot(pos) for obj_id, pos in self.stadium_scene.all_items.items()}
+
+        food_reward = 0
+        if self.robot_coll_dist > 0:  # otherwise use pybullet collisions (this is easier for the agent)
+            for obj_id, dist in dists.items():
+                if dist < self.robot_coll_dist:
+                    food_reward += self.stadium_scene.reward_collision(obj_id, self.robot.body_real_xyz)
+                    dists[obj_id] = self.sq_dist_robot(self.stadium_scene.all_items[obj_id])  # updating dist
+
         # removing angle to target and adding in yaw and food readings
-        fr, pr = self.get_readings()
+        fr, pr = self.get_readings(dists)
         state = np.concatenate([state[:1], state[3:8], [self.robot.body_rpy[2]], state[8:], fr, pr])
 
         # state[0] is body height above ground, body_rpy[1] is pitch
@@ -80,43 +96,34 @@ class AntGatherBulletEnv(AntBulletEnv):
             else:
                 self.robot.feet_contact[i] = 0.0
 
-        food_reward = 0
-        collided_ids = [cp[2] for cp in self._p.getContactPoints(self.robot.objects[0])]
-        for coll_id in collided_ids:
-            food_reward += self.stadium_scene.reward_collision(coll_id, self.robot.body_real_xyz)
+        if self.robot_coll_dist <= 0:  # otherwise use distance based collision (this is harder)
+            collided_ids = [cp[2] for cp in self._p.getContactPoints(self.robot.objects[0])]
+            for coll_id in collided_ids:
+                food_reward += self.stadium_scene.reward_collision(coll_id, self.robot.body_real_xyz)
 
         dead_rew = self.dying_cost if self._isDone() else 0
-
         return state, food_reward + dead_rew, bool(done), {'food_rew': food_reward, 'dead_rew': dead_rew}
 
     # modified from: rllab.envs.mujoco.gather.gather_env.py
-    def get_readings(self):  # equivalent to get_current_maze_obs in maze_env.py
-        # compute sensor readings
+    def get_readings(self, dists: Dict[int, float]):
+        """compute sensor readings"""
         # first, obtain current orientation
         food_readings = np.zeros(self.n_bins)
         poison_readings = np.zeros(self.n_bins)
         robot_x, robot_y = self.robot_body.pose().xyz()[:2]
-        # sort objects by distance to the robot, so that farther objects'
-        # signals will be occluded by the closer ones'
-        objects = [pos[:2] + [self.FOOD] for pos in self.stadium_scene.food.values()] + \
-                  [pos[:2] + [self.POISON] for pos in self.stadium_scene.poison.values()]
-
-        # TODO:
-        #  calc dist once
-        #  possibly do reward based on dist to food/poison rather than collision with it
-        sorted_objects = sorted(
-            objects, key=lambda o:
-            (o[0] - robot_x) ** 2 + (o[1] - robot_y) ** 2)[::-1]
-        # fill the readings
-        bin_res = self.sensor_span / self.n_bins
-
         ori = self.robot_body.pose().rpy()[2]  # main change from rllab, this is the yaw of the robot
 
-        for ox, oy, typ in sorted_objects:
-            # TODO second dist calc is here
-            dist = ((oy - robot_y) ** 2 + (ox - robot_x) ** 2) ** 0.5  # compute distance between object and robot
+        # sort objects by distance to the robot, so that farther objects'
+        # signals will be occluded by the closer ones'
+        objects = [pos[:2] + [self.FOOD] + [dists[obj_id]] for obj_id, pos in self.stadium_scene.food.items()] + \
+                  [pos[:2] + [self.POISON] + [dists[obj_id]] for obj_id, pos in self.stadium_scene.poison.items()]
+
+        sorted_objects = sorted(objects, key=lambda o: o[3], reverse=True)
+        bin_res = self.sensor_span / self.n_bins
+
+        for ox, oy, typ, dist in sorted_objects:
             if dist > self.sensor_range:  # only include readings for objects within range
-                continue  # break? because its sorted by distance
+                continue
 
             angle = math.atan2(oy - robot_y, ox - robot_x) - ori
             if math.isnan(angle):
@@ -134,12 +141,17 @@ class AntGatherBulletEnv(AntBulletEnv):
             bin_number = int((angle + half_span) / bin_res)
             intensity = 1.0 - dist / self.sensor_range
 
-            # self._p.addUserDebugLine(self.robot_body.pose().xyz(), [ox, oy, 0], lifeTime=1)
+            # useful debug
+            # self._p.addUserDebugLine(self.robot_body.pose().xyz(), [ox, oy, 0], lifeTime=0.1,
+            #                          lineColorRGB=[1, 0, 0] if typ == self.POISON else [0, 1, 0])
             if typ == self.FOOD:
                 food_readings[bin_number] = intensity
             elif typ == self.POISON:
                 poison_readings[bin_number] = intensity
             else:
-                raise Exception('Unknown food type')
+                raise Exception(f'Unknown food type: {typ}')
 
         return food_readings, poison_readings
+
+    def sq_dist_robot(self, pos):
+        return (pos[0] - self.robot.body_real_xyz[0]) ** 2 + (pos[1] - self.robot.body_real_xyz[1]) ** 2

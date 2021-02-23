@@ -10,6 +10,7 @@ from hrl_pybullet_envs.envs.sizeable_enclosed_scene import SizeableEnclosedScene
 
 class GatherScene(SizeableEnclosedScene):
     no_rot = pybullet.getQuaternionFromEuler((0, 0, 0))
+    fake_kill_pos = [100, 0, -10]
 
     def __init__(self, bullet_client, gravity, timestep, frame_skip, world_size: tuple, n_food: int, n_poison: int,
                  robot_object_spacing: float = 2, respawn: bool = True):
@@ -29,6 +30,8 @@ class GatherScene(SizeableEnclosedScene):
 
         self.rs: np.random.RandomState = np.random.RandomState()
 
+    all_items = property(lambda self: {**self.food, **self.poison})
+
     def seed(self, rs: np.random.RandomState):
         self.rs = rs
 
@@ -39,8 +42,11 @@ class GatherScene(SizeableEnclosedScene):
         for i in range(self.n_poison - len(self.poison)):
             self.spawn_random_poison([0, 0])
 
-        for obj_id in list(self.food.keys()) + list(self.poison.keys()):
-            self._move_random_on_plane(obj_id, [0, 0])
+        for obj_id in list(self.food.keys()):
+            self.move_food_random(obj_id, [0, 0])
+
+        for obj_id in list(self.poison.keys()):
+            self.move_poison_random(obj_id, [0, 0])
 
     def _random_on_plane(self, avoid_xy: List[float] = None) -> list:
         if avoid_xy is None:  # avoid a point too far away to matter
@@ -91,13 +97,15 @@ class GatherScene(SizeableEnclosedScene):
             if self.respawn:
                 self.move_food_random(obj_id, agent_xyz[:2])
             else:  # move away instead of deleting
-                self._p.resetBasePositionAndOrientation(obj_id, [0, 0, -10], self.no_rot)
+                self._p.resetBasePositionAndOrientation(obj_id, self.fake_kill_pos, self.no_rot)
+                self.food[obj_id] = self.fake_kill_pos
             rew = 1
         elif obj_id in self.poison:
             if self.respawn:
                 self.move_poison_random(obj_id, agent_xyz[:2])
             else:  # move away instead of deleting
-                self._p.resetBasePositionAndOrientation(obj_id, [0, 0, -10], self.no_rot)
+                self._p.resetBasePositionAndOrientation(obj_id, self.fake_kill_pos, self.no_rot)
+                self.poison[obj_id] = self.fake_kill_pos
             rew = -1
         else:
             rew = 0

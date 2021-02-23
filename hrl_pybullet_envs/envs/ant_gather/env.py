@@ -20,29 +20,34 @@ class AntGatherBulletEnv(AntBulletEnv):
                  sensor_span=np.pi,
                  robot_object_spacing=2.,
                  dying_cost=-10,
+                 respawn=True,
                  render=False):
         super().__init__(render=render)
         self._alive = True
         self.walk_target_x = 0
         self.walk_target_y = 0
 
+        # env related
         self.n_bins = n_bins
         self.sensor_span = sensor_span
         self.sensor_range = sensor_range
-        self.spacing = robot_object_spacing
         self.dying_cost = dying_cost
 
+        # scene related
         self.stadium_scene: GatherScene = None
         self.n_food = n_food
         self.n_poison = n_poison
         self.world_size = world_size
+        self.spacing = robot_object_spacing
+        self.respawn = respawn
 
         # removing angle to target and adding in yaw and food readings
         self.observation_space = self.robot.observation_space
         self.observation_space.shape = (self.observation_space.shape[0] - 2 + 1 + 2 * n_bins,)
 
     def create_single_player_scene(self, bullet_client):
-        self.stadium_scene = GatherScene(bullet_client, 9.8, 0.0165 / 4, 4, self.world_size, self.n_food, self.n_poison)
+        self.stadium_scene = GatherScene(bullet_client, 9.8, 0.0165 / 4, 4,
+                                         self.world_size, self.n_food, self.n_poison, self.spacing, False)
         self.stadium_scene.seed(self.np_random)
         return self.stadium_scene
 
@@ -78,7 +83,7 @@ class AntGatherBulletEnv(AntBulletEnv):
         food_reward = 0
         collided_ids = [cp[2] for cp in self._p.getContactPoints(self.robot.objects[0])]
         for coll_id in collided_ids:
-            food_reward += self.stadium_scene.destroy_and_respawn(coll_id)
+            food_reward += self.stadium_scene.reward_collision(coll_id, self.robot.body_real_xyz)
 
         dead_rew = self.dying_cost if self._isDone() else 0
 

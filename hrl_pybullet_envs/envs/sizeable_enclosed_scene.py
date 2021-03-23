@@ -5,6 +5,7 @@ import pybullet
 from pybullet_envs.scene_abstract import Scene
 
 from hrl_pybullet_envs.assets import assets_dir
+from pybulletgym.envs.mujoco.envs.locomotion.hopper_env import HopperMuJoCoEnv
 
 
 class SizeableEnclosedScene(Scene):

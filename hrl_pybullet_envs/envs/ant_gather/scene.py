@@ -1,8 +1,10 @@
 from os.path import join
 from typing import Tuple, List
 
+import gym
 import numpy as np
 import pybullet
+from numpy.random import RandomState
 
 from hrl_pybullet_envs.assets import assets_dir
 from hrl_pybullet_envs.envs.sizeable_enclosed_scene import SizeableEnclosedScene
@@ -28,15 +30,16 @@ class GatherScene(SizeableEnclosedScene):
         self.spacing = robot_object_spacing
         self.respawn = respawn
 
-        self.rs: np.random.RandomState = np.random.RandomState()
+        self.rs, _ = gym.utils.seeding.np_random(None)
 
     all_items = property(lambda self: {**self.food, **self.poison})
 
-    def seed(self, rs: np.random.RandomState):
-        self.rs = rs
+    def seed(self, seed):
+        self.rs, _ = gym.utils.seeding.np_random(seed)
 
     def episode_restart(self, bullet_client):
         super().episode_restart(bullet_client)
+
         for i in range(self.n_food - len(self.food)):
             self.spawn_random_food([0, 0])
         for i in range(self.n_poison - len(self.poison)):

@@ -1,5 +1,4 @@
 import numpy as np
-import pybullet
 from pybullet_envs.gym_locomotion_envs import AntBulletEnv
 
 from hrl_pybullet_envs.envs.ant_maze.scene import MazeScene
@@ -101,4 +100,4 @@ class AntMazeBulletEnv(AntBulletEnv):
                                                  'ctrl_cost':   ctrl_cost}
 
     def reset(self):
-        super().reset()
+        return super().reset()

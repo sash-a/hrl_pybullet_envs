@@ -3,6 +3,8 @@ import warnings
 from typing import Dict
 
 import numpy as np
+# noinspection PyUnresolvedReferences
+import pybulletgym
 from pybullet_envs.gym_locomotion_envs import AntBulletEnv
 
 from hrl_pybullet_envs.envs.ant_gather.scene import GatherScene
@@ -51,8 +53,13 @@ class AntGatherBulletEnv(AntBulletEnv):
     def create_single_player_scene(self, bullet_client):
         self.stadium_scene = GatherScene(bullet_client, 9.8, 0.0165 / 4, 4,
                                          self.world_size, self.n_food, self.n_poison, self.spacing, self.respawn)
-        self.stadium_scene.seed(self.np_random)
+
         return self.stadium_scene
+
+    def seed(self, seed=None):
+        super().seed(seed)
+        if hasattr(self, 'stadium_scene'):
+            self.stadium_scene.seed(seed)
 
     def reset(self):
         r = super().reset()

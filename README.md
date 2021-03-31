@@ -4,3 +4,8 @@ This package was created because all of the HRL locomotion envs are only availab
 
 ### Install
 `pip install hrl_pybullet_envs`
+
+
+### Envs:
+* AntGatherBulletEnv-v0
+* AntMazeBulletEnv-v0

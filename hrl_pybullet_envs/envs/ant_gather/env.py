@@ -80,10 +80,11 @@ class AntGatherBulletEnv(AntMuJoCoEnv):
         dists = {obj_id: self.sq_dist_robot(pos) for obj_id, pos in self.stadium_scene.all_items.items()}
 
         food_reward = 0
+        pos = self.parts['torso'].get_position()
         if self.robot_coll_dist > 0:  # otherwise use pybullet collisions (this is easier for the agent)
             for obj_id, dist in dists.items():
                 if dist < self.robot_coll_dist:
-                    food_reward += self.stadium_scene.reward_collision(obj_id, self.robot.body_real_xyz)
+                    food_reward += self.stadium_scene.reward_collision(obj_id, pos)
                     dists[obj_id] = self.sq_dist_robot(self.stadium_scene.all_items[obj_id])  # updating dist
 
         # removing angle to target and adding in yaw and food readings
@@ -109,7 +110,7 @@ class AntGatherBulletEnv(AntMuJoCoEnv):
         if self.robot_coll_dist <= 0:  # otherwise use distance based collision (this is harder)
             collided_ids = [cp[2] for cp in self._p.getContactPoints(self.robot.objects[0])]
             for coll_id in collided_ids:
-                food_reward += self.stadium_scene.reward_collision(coll_id, self.robot.body_real_xyz)
+                food_reward += self.stadium_scene.reward_collision(coll_id, pos)
 
         dead_rew = self.dying_cost if self._alive < 0 else 0
         return state, food_reward + dead_rew, bool(done), {'food_rew': food_reward, 'dead_rew': dead_rew}

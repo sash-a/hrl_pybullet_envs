@@ -3,12 +3,12 @@ import warnings
 from typing import Dict
 
 import numpy as np
-from pybulletgym.envs.mujoco.envs.locomotion.ant_env import AntMuJoCoEnv
+from pybullet_envs.gym_locomotion_envs import AntBulletEnv
 
 from hrl_pybullet_envs.envs.ant_gather.scene import GatherScene
 
 
-class AntGatherBulletEnv(AntMuJoCoEnv):
+class AntGatherBulletEnv(AntBulletEnv):
     FOOD = 'food'
     POISON = 'poison'
 
@@ -36,7 +36,6 @@ class AntGatherBulletEnv(AntMuJoCoEnv):
         self.sensor_range = sensor_range
         self.dying_cost = dying_cost
         self.robot_coll_dist = robot_coll_dist
-        self.state_len = 27
 
         self.debug = debug
 
@@ -48,9 +47,8 @@ class AntGatherBulletEnv(AntMuJoCoEnv):
         self.spacing = robot_object_spacing
         self.respawn = respawn
 
-        # ignoring contact points
         self.observation_space = self.robot.observation_space
-        self.observation_space.shape = (self.state_len + 2 * n_bins,)
+        self.observation_space.shape = (self.robot.observation_space.shape[0] + 2 * n_bins,)
 
     def create_single_player_scene(self, bullet_client):
         self.stadium_scene = GatherScene(bullet_client, 9.8, 0.0165 / 4, 4,
@@ -68,7 +66,7 @@ class AntGatherBulletEnv(AntMuJoCoEnv):
 
         dists = {obj_id: self.sq_dist_robot(pos) for obj_id, pos in self.stadium_scene.all_items.items()}
         fr, pr = self.get_readings(dists)
-        return np.concatenate([r[:self.state_len], fr, pr])
+        return np.concatenate([r, fr, pr])
 
     def step(self, a):
         self.robot.apply_action(a)
@@ -89,7 +87,7 @@ class AntGatherBulletEnv(AntMuJoCoEnv):
 
         # removing angle to target and adding in yaw and food readings
         fr, pr = self.get_readings(dists)
-        state = np.concatenate([state[:self.state_len], fr, pr])
+        state = np.concatenate([state, fr, pr])
 
 
         # state[0] is body height above ground, body_rpy[1] is pitch

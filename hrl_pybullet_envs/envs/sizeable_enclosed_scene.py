@@ -5,7 +5,6 @@ import pybullet
 from pybullet_envs.scene_abstract import Scene
 
 from hrl_pybullet_envs.assets import assets_dir
-from pybulletgym.envs.mujoco.envs.locomotion.hopper_env import HopperMuJoCoEnv
 
 
 class SizeableEnclosedScene(Scene):
@@ -32,10 +31,10 @@ class SizeableEnclosedScene(Scene):
                 self._p.loadURDF(join(assets_dir, 'plane.xml'), (0 + self.center[0], 0 + self.center[1], 0))]
             self.ground_plane_mjcf += [
                 self._p.loadURDF(join(assets_dir, 'wall.xml'),
-                                 (0 + self.center[0], self.size[1] / 2 + self.center[1], 2.5))]
+                                 (self.center[0], self.size[1] / 2 + self.center[1], 2.5))]
             self.ground_plane_mjcf += [
                 self._p.loadURDF(join(assets_dir, 'wall.xml'),
-                                 (0 + self.center[0], -self.size[1] / 2 + self.center[1], 2.5))]
+                                 (self.center[0], -self.size[1] / 2 + self.center[1], 2.5))]
             self.ground_plane_mjcf += [self._p.loadURDF(join(assets_dir, 'wall.xml'),
                                                         (self.size[0] / 2 + self.center[0], 0 + self.center[1], 2.5),
                                                         pybullet.getQuaternionFromEuler((0, 0, np.pi / 2)))]

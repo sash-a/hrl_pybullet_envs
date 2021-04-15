@@ -150,16 +150,18 @@ class AntGatherBulletEnv(AntBulletEnv):
             bin_number = int((angle + half_span) / bin_res)
             intensity = 1.0 - dist / self.sensor_range
 
-            # useful debug
-            if self.debug:
-                self._p.addUserDebugLine(self.robot_body.pose().xyz(), [ox, oy, 0], lifeTime=0.1,
-                                         lineColorRGB=[1, 0, 0] if typ == self.POISON else [0, 1, 0])
             if typ == self.FOOD:
                 food_readings[bin_number] = intensity
             elif typ == self.POISON:
                 poison_readings[bin_number] = intensity
             else:
                 raise Exception(f'Unknown food type: {typ}')
+
+            # useful debug
+            if self.debug and intensity > 0:
+                colour = [1, 0, 0] if typ == self.POISON else [0, 1, 0]
+                self._p.addUserDebugLine(self.robot_body.pose().xyz(), [ox, oy, 0], lifeTime=0.5, lineColorRGB=colour)
+                self._p.addUserDebugText(f'{intensity:0.2f}', [ox, oy, 0], lifeTime=0.5, textColorRGB=colour)
 
         return food_readings, poison_readings
 

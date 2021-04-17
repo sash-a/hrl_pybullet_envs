@@ -24,7 +24,7 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         self.create_target()
         self.flag = None
 
-        self.last_changed_pos = 0
+        self.steps_since_goal_change = 0
 
         self.goals = []
 
@@ -43,7 +43,7 @@ class AntFlagrunBulletEnv(AntBulletEnv):
     def create_target(self) -> Tuple[float, float]:
         g = (self.mpi_common_rand.uniform(-self.size / 2, self.size / 2),
              self.mpi_common_rand.uniform(-self.size / 2, self.size / 2))
-        while np.linalg.norm(g) < 0.25:
+        while np.linalg.norm(g) < 0.5:  # don't spawn too close too player start (0,0)
             g = (self.mpi_common_rand.uniform(-self.size / 2, self.size / 2),
                  self.mpi_common_rand.uniform(-self.size / 2, self.size / 2))
 
@@ -83,7 +83,7 @@ class AntFlagrunBulletEnv(AntBulletEnv):
 
     def step(self, a):
         s, r, d, i = super().step(a)
-        self.last_changed_pos += 1
+        self.steps_since_goal_change += 1
 
         # If close enough to target then give extra reward and move the target.
         if np.linalg.norm(self.robot.body_xyz[:2] - np.array([self.walk_target_x, self.walk_target_y])) < self.tol:
@@ -91,15 +91,15 @@ class AntFlagrunBulletEnv(AntBulletEnv):
             try:
                 self.set_target(*self.goals.pop())
                 i['target'] = [self.walk_target_x, self.walk_target_y]
-                self.last_changed_pos = 0
+                self.steps_since_goal_change = 0
             except IndexError:
                 d = True
 
-        if self.last_changed_pos >= self.timeout:
+        if 0 < self.timeout <= self.steps_since_goal_change:
             try:
                 self.set_target(*self.goals.pop())
                 i['target'] = [self.walk_target_x, self.walk_target_y]
-                self.last_changed_pos = 0
+                self.steps_since_goal_change = 0
             except IndexError:
                 d = True
 

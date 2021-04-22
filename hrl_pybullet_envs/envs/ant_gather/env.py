@@ -1,6 +1,6 @@
 import math
 import warnings
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy as np
 from pybullet_envs.gym_locomotion_envs import AntBulletEnv
@@ -16,12 +16,13 @@ class AntGatherBulletEnv(AntBulletEnv):
                  n_food=8,
                  n_poison=8,
                  world_size=(15, 15),
-                 n_bins=10,
+                 n_bins=5,
                  sensor_range=20.,
                  sensor_span=np.pi,
                  robot_coll_dist=1,  # this might be too easy
                  robot_object_spacing=2.,
                  dying_cost=-10,
+                 use_sensor=True,
                  respawn=True,
                  render=False,
                  debug=False):
@@ -34,6 +35,7 @@ class AntGatherBulletEnv(AntBulletEnv):
         self.n_bins = n_bins
         self.sensor_span = sensor_span
         self.sensor_range = sensor_range
+        self.use_sensor = use_sensor
         self.dying_cost = dying_cost
         self.robot_coll_dist = robot_coll_dist
 
@@ -48,7 +50,8 @@ class AntGatherBulletEnv(AntBulletEnv):
         self.respawn = respawn
 
         self.observation_space = self.robot.observation_space
-        self.observation_space.shape = (self.robot.observation_space.shape[0] + 2 * n_bins,)
+        n_food_obs = 2 * n_bins if self.use_sensor else 2 * (min(n_food, n_bins) + min(n_poison, n_bins))
+        self.observation_space.shape = (self.robot.observation_space.shape[0] + n_food_obs,)
 
     def create_single_player_scene(self, bullet_client):
         self.stadium_scene = GatherScene(bullet_client, 9.8, 0.0165 / 4, 4,
@@ -65,7 +68,7 @@ class AntGatherBulletEnv(AntBulletEnv):
         r = super().reset()
 
         dists = {obj_id: self.sq_dist_robot(pos) for obj_id, pos in self.stadium_scene.all_items.items()}
-        fr, pr = self.get_readings(dists)
+        fr, pr = self.get_food_obs(dists)
         return np.concatenate([r, fr, pr])
 
     def step(self, a):
@@ -86,7 +89,7 @@ class AntGatherBulletEnv(AntBulletEnv):
                     dists[obj_id] = self.sq_dist_robot(self.stadium_scene.all_items[obj_id])  # updating dist
 
         # removing angle to target and adding in yaw and food readings
-        fr, pr = self.get_readings(dists)
+        fr, pr = self.get_food_obs(dists)
         state = np.concatenate([state, fr, pr])
 
 
@@ -113,8 +116,14 @@ class AntGatherBulletEnv(AntBulletEnv):
         dead_rew = self.dying_cost if self._alive < 0 else 0
         return state, food_reward + dead_rew, bool(done), {'food_rew': food_reward, 'dead_rew': dead_rew}
 
+    def get_food_obs(self, dists: Dict[int, float]) -> Tuple[np.ndarray, np.ndarray]:
+        if self.use_sensor:
+            return self.get_sensor_readings(dists)
+        else:
+            return self.get_abs_pos(dists)
+
     # modified from: rllab.envs.mujoco.gather.gather_env.py
-    def get_readings(self, dists: Dict[int, float]):
+    def get_sensor_readings(self, dists: Dict[int, float]) -> Tuple[np.ndarray, np.ndarray]:
         """compute sensor readings"""
         # first, obtain current orientation
         food_readings = np.zeros(self.n_bins)
@@ -164,6 +173,25 @@ class AntGatherBulletEnv(AntBulletEnv):
                 self._p.addUserDebugText(f'{intensity:0.2f}', [ox, oy, 0], lifeTime=0.5, textColorRGB=colour)
 
         return food_readings, poison_readings
+
+    def get_abs_pos(self, dists: Dict[int, float]) -> Tuple[np.ndarray, np.ndarray]:
+        food = [pos[:2] + [dists[obj_id]] for obj_id, pos in self.stadium_scene.food.items()]
+        poison = [pos[:2] + [dists[obj_id]] for obj_id, pos in self.stadium_scene.poison.items()]
+
+        sorted_food = sorted(food, key=lambda o: o[2])
+        sorted_poison = sorted(poison, key=lambda o: o[2])
+
+        if self.debug:
+            robot_pos = self.robot_body.pose().xyz()
+            for f in sorted_food[:self.n_bins]:
+                self._p.addUserDebugLine(robot_pos, [*f[:2], 0], lifeTime=0.5, lineColorRGB=[0, 1, 0])
+                self._p.addUserDebugText(f'{f[0]:0.2f},{f[1]:0.2f}', [*f[:2], 0], lifeTime=0.5, textColorRGB=[0, 1, 0])
+            for p in sorted_poison[:self.n_bins]:
+                self._p.addUserDebugLine(robot_pos, [*p[:2], 0], lifeTime=0.5, lineColorRGB=[1, 0, 0])
+                self._p.addUserDebugText(f'{p[0]:0.2f},{p[1]:0.2f}', [*p[:2], 0], lifeTime=0.5, textColorRGB=[1, 0, 0])
+
+        return np.array([f[:2] for f in sorted_food[:self.n_bins]]).flatten(), \
+               np.array([p[:2] for p in sorted_poison[:self.n_bins]]).flatten()
 
     def sq_dist_robot(self, pos):
         xyz = self.parts['torso'].get_pose()

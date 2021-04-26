@@ -1,10 +1,11 @@
 import gym
 
 from hrl_pybullet_envs.envs.ant_flagrun.env import AntFlagrunBulletEnv
-from hrl_pybullet_envs.envs.ant_gather.env import AntGatherBulletEnv
 from hrl_pybullet_envs.envs.ant_maze.env import AntMazeBulletEnv
+from hrl_pybullet_envs.envs.gather.ant_env import AntGatherBulletEnv
+from hrl_pybullet_envs.envs.gather.point_env import PointGatherBulletEnv
 
-__all__ = [AntGatherBulletEnv, AntMazeBulletEnv, AntFlagrunBulletEnv]
+__all__ = [AntGatherBulletEnv, AntMazeBulletEnv, AntFlagrunBulletEnv, PointGatherBulletEnv]
 
 for env in __all__:
     gym.envs.register(

@@ -4,8 +4,6 @@ from typing import Tuple, List
 import gym
 import numpy as np
 import pybullet
-from numpy.random import RandomState
-
 from hrl_pybullet_envs.assets import assets_dir
 from hrl_pybullet_envs.envs.sizeable_enclosed_scene import SizeableEnclosedScene
 

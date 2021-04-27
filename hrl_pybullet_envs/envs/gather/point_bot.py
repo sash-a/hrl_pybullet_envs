@@ -45,9 +45,6 @@ class PointBot(MJCFBasedRobot):
         return parts, [], [], self.robot_body  # TODO sort out joints
 
     def calc_state(self):
-        # TODO same obs as WalkerBase without joint obs
-        vel, ang_vel = self._p.getBaseVelocity(self.objects[0])
-        pos, ori = self._p.getBasePositionAndOrientation(self.objects[0])
         # return np.concatenate((pos, vel, ang_vel))
         pose: Pose_Helper = self.robot_body.pose()
         x, y, z = pose.xyz()

@@ -81,12 +81,18 @@ class AntFlagrunBulletEnv(AntBulletEnv):
 
         return r
 
+    ant_env_rew_weight = 1
+    distance_rew_weight = 0
+
     def step(self, a):
         s, r, d, i = super().step(a)
+        r *= AntFlagrunBulletEnv.ant_env_rew_weight
         self.steps_since_goal_change += 1
 
+        dist = np.linalg.norm(self.robot.body_xyz[:2] - np.array([self.walk_target_x, self.walk_target_y]))
+        r += -dist * AntFlagrunBulletEnv.distance_rew_weight
         # If close enough to target then give extra reward and move the target.
-        if np.linalg.norm(self.robot.body_xyz[:2] - np.array([self.walk_target_x, self.walk_target_y])) < self.tol:
+        if dist < self.tol:
             r += 5000
             try:
                 self.set_target(*self.goals.pop())

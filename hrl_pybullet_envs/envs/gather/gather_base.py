@@ -59,10 +59,10 @@ class GatherBulletEnv(MJCFBaseBulletEnv):
                                          self.world_size, self.n_food, self.n_poison, self.spacing, self.respawn)
         return self.stadium_scene
 
-    def seed(self, seed=None):
-        super().seed(seed)
-        if hasattr(self, 'stadium_scene'):
-            self.stadium_scene.seed(seed)
+    # def seed(self, seed=None):
+    #     super().seed(seed)
+    #     if hasattr(self, 'stadium_scene'):
+    #         self.stadium_scene.seed(seed)
 
     def reset(self):
         r = super().reset()

@@ -9,11 +9,12 @@ from hrl_pybullet_envs.assets import assets_dir
 
 class PointBot(MJCFBasedRobot):
     no_rot = pybullet.getQuaternionFromEuler((0, 0, 0))
+    start_pos = [0, 0, 0.5]
 
     def __init__(self):
         act_dim = 2
         obs_dim = 8
-        super().__init__(os.path.join(assets_dir, "sphere.xml"), "sphere", act_dim, obs_dim)
+        super().__init__(os.path.join(assets_dir, "player_cube.xml"), "sphere", act_dim, obs_dim)
         self.initial_z = 1
         self.walk_target_x = 0
         self.walk_target_y = 0
@@ -22,10 +23,10 @@ class PointBot(MJCFBasedRobot):
         self._p.resetBasePositionAndOrientation(self.objects[0], position, orientation)
 
     def robot_specific_reset(self, bullet_client):
-        self.reset_pose([0, 0, 1], PointBot.no_rot)
+        self.reset_pose(PointBot.start_pos, PointBot.no_rot)
 
     def apply_action(self, a):
-        a = a / np.linalg.norm(a) * 50
+        a = a / np.linalg.norm(a) * 500
         pos, ori = self._p.getBasePositionAndOrientation(self.objects[0])
         self._p.applyExternalForce(self.objects[0], -1, [*a, 0], pos, self._p.WORLD_FRAME)
 

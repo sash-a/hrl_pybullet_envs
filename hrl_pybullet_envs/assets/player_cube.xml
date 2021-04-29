@@ -5,7 +5,7 @@
    <worldbody>
       <body pos="0 0 0">
          <joint type="free"/>
-         <geom name="sphere_geom" size="0.35" type="sphere"/>
+         <geom name="player_cube" size="0.35 0.35 0.35" condim="1" mass="10.0" friction="0.1 0.1 0.1" type="box"/>
       </body>
    </worldbody>
 </mujoco>

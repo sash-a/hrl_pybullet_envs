@@ -13,8 +13,8 @@ os.sys.path.insert(0, parentdir)
 import pybullet_data
 
 
-def get_player_sphere(p, x, y, z):
-    objects = p.loadMJCF(os.path.join(assets_dir, "sphere.xml"))
+def get_player_cube(p, x, y, z):
+    objects = p.loadMJCF(os.path.join(assets_dir, "player_cube.xml"))
     sphere = objects[0]
     p.resetBasePositionAndOrientation(sphere, [x, y, z], [0, 0, 0, 1])
     p.changeDynamics(sphere, -1, linearDamping=0.9)

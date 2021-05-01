@@ -19,14 +19,18 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         self.timeout = timeout
         self.enclosed = enclosed
         self.manual_goal_creation = manual_goal_creation
-        # needed for parallel envs so that they create the same targets on each thread (np_random seems to not work)
-        self.mpi_common_rand: np.random.RandomState = np.random.RandomState(seed)
-        self.create_target()
+
         self.flag = None
 
-        self.steps_since_goal_change = 0
-
+        # needed for parallel envs so that they create the same targets on each thread (np_random seems to not work)
+        self.mpi_common_rand: np.random.RandomState = np.random.RandomState(seed)
         self.goals = []
+
+        self.steps_since_goal_change = 0
+        self._sq_dist_goal = 0  # distance to goal on step new goal received
+        self._goal_start_pos = [0, 0]  # position on step new goal received
+
+    goal = property(lambda self: (self.walk_target_x, self.walk_target_y))
 
     def create_single_player_scene(self, bullet_client):
         if self.enclosed:
@@ -54,14 +58,16 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         Used to create multiple goals such that all agents run in parallel will continue to generate the same values.
         Each generation these should be cleared and recreated
         """
-        for _ in range(n):
-            self.goals.append(self.create_target())
+        self.goals = [self.create_target() for _ in range(n)]
 
     def set_target(self, x, y):
         self.walk_target_x = x
         self.walk_target_y = y
         self.robot.walk_target_x = x
         self.robot.walk_target_y = y
+
+        self._sq_dist_goal = np.linalg.norm(np.array([x, y]) - self.robot.robot_body.get_position()[:2]) ** 2
+        self._goal_start_pos = self.robot.robot_body.get_position()[:2]
 
         if self.isRender:
             self._p.resetBasePositionAndOrientation(self.flag.bodies[0],
@@ -82,21 +88,24 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         return r
 
     ant_env_rew_weight = 1
-    distance_rew_weight = 0
+    path_rew_weight = 0
 
     def step(self, a):
         s, r, d, i = super().step(a)
         r *= AntFlagrunBulletEnv.ant_env_rew_weight
         self.steps_since_goal_change += 1
 
-        dist = np.linalg.norm(self.robot.body_xyz[:2] - np.array([self.walk_target_x, self.walk_target_y]))
-        r += -dist * AntFlagrunBulletEnv.distance_rew_weight
+        dist = np.linalg.norm(self.robot.body_xyz[:2] - np.array(self.goal))
+        # rewarding agent based on how well it is following a straight line to the goal
+        path_rew = np.dot(self.robot.body_xyz[:2] - self._goal_start_pos, self.goal) / self._sq_dist_goal
+        r += path_rew * AntFlagrunBulletEnv.path_rew_weight
+
         # If close enough to target then give extra reward and move the target.
         if dist < self.tol:
             r += 5000
             try:
                 self.set_target(*self.goals.pop())
-                i['target'] = [self.walk_target_x, self.walk_target_y]
+                i['target'] = self.goal
                 self.steps_since_goal_change = 0
             except IndexError:
                 d = True
@@ -104,7 +113,7 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         if 0 < self.timeout <= self.steps_since_goal_change:
             try:
                 self.set_target(*self.goals.pop())
-                i['target'] = [self.walk_target_x, self.walk_target_y]
+                i['target'] = self.goal
                 self.steps_since_goal_change = 0
             except IndexError:
                 d = True

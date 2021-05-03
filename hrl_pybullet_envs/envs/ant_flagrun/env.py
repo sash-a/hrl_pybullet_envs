@@ -33,9 +33,8 @@ class AntFlagrunBulletEnv(AntBulletEnv):
     goal = property(lambda self: (self.walk_target_x, self.walk_target_y))
 
     def create_single_player_scene(self, bullet_client):
-        if self.enclosed:
-            scene = self.stadium_scene = SizeableEnclosedScene(bullet_client, 9.8, 0.0165 / 4, 4,
-                                                               (self.size, self.size))
+        if self.enclosed:  # if enclosed make the enclosing area larger so that no targets spawn on/past the wall
+            scene = self.stadium_scene = SizeableEnclosedScene(bullet_client, 9.8, 0.0165 / 4, 4, (self.size + 2,) * 2)
         else:
             scene = super().create_single_player_scene(bullet_client)
 

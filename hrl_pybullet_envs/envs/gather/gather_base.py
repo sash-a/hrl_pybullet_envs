@@ -66,6 +66,7 @@ class GatherBulletEnv(MJCFBaseBulletEnv):
 
     def reset(self):
         r = super().reset()
+        self._p.resetBasePositionAndOrientation(self.robot.objects[0], [0, 0, 1], [0, 0, 0, 1])
 
         dists = {obj_id: self.sq_dist_robot(pos) for obj_id, pos in self.stadium_scene.all_items.items()}
         fr, pr = self.get_food_obs(dists)

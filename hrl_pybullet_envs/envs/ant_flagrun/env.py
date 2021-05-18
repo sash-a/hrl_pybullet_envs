@@ -24,6 +24,11 @@ class AntFlagrunBulletEnv(AntBulletEnv):
 
         # needed for parallel envs so that they create the same targets on each thread (np_random seems to not work)
         self.mpi_common_rand: np.random.RandomState = np.random.RandomState(seed)
+        self.create_target()
+        self.flag = None
+
+        self.steps_since_goal_change = 0
+
         self.goals = []
 
         self.steps_since_goal_change = 0

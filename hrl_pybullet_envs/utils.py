@@ -3,7 +3,7 @@
 import inspect
 import os
 
-from pybulletgym.envs.roboschool.robots.robot_bases import BodyPart
+from pybullet_envs.robot_bases import BodyPart
 
 from hrl_pybullet_envs.assets import assets_dir
 

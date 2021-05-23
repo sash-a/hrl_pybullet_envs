@@ -33,7 +33,7 @@ class AntFlagrunBulletEnv(AntBulletEnv):
 
         self.steps_since_goal_change = 0
         self._sq_dist_goal = 0  # distance to goal on step new goal received
-        self._goal_start_pos = [0, 0]  # position on step new goal received
+        self._goal_start_pos = np.array([0, 0])  # position on step new goal received
 
     goal = property(lambda self: (self.walk_target_x, self.walk_target_y))
 
@@ -102,7 +102,8 @@ class AntFlagrunBulletEnv(AntBulletEnv):
 
         dist = np.linalg.norm(self.robot.body_xyz[:2] - np.array(self.goal))
         # rewarding agent based on how well it is following a straight line to the goal
-        path_rew = np.dot(self.robot.body_xyz[:2] - self._goal_start_pos, self.goal) / self._sq_dist_goal
+        path_rew = np.dot(self.robot.body_xyz[:2] - self._goal_start_pos,
+                          np.array(self.goal) - self._goal_start_pos) / self._sq_dist_goal
         r += path_rew * AntFlagrunBulletEnv.path_rew_weight
 
         # If close enough to target then give extra reward and move the target.

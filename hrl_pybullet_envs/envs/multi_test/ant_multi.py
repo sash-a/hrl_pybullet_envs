@@ -4,33 +4,22 @@ from pybullet_envs.gym_locomotion_envs import AntBulletEnv
 import numpy as np
 from hrl_pybullet_envs.envs.sizeable_enclosed_scene import VecSquareEnclosedScene
 from pybullet_envs.robot_locomotors import Ant
+from gym.utils.seeding import np_random
 
 
 class CustomAnt(Ant):
     def __init__(self, center, n):
         super().__init__()
-
         self.start_pos_x, self.start_pos_y, self.start_pos_z = center[0], center[1], center[2]
-        self.center = center
         self.player_n = n
+        self.np_random, self.seed = np_random()
 
-        self.np_random = np.random.RandomState()
+    center = property(lambda self: (self.start_pos_x, self.start_pos_y, self.start_pos_z))
 
     def addToScene(self, bullet_client, bodies):
         r = super().addToScene(bullet_client, bodies)
         self.robot_body.reset_position(self.center)
         return r
-
-    def robot_specific_reset(self, bullet_client):
-        self._p = bullet_client
-        for j in self.ordered_joints:
-            j.reset_current_position(self.np_random.uniform(low=-0.1, high=0.1), 0)
-        # self.robot_body.reset_position(self.center)
-
-        self.feet = [self.parts[f] for f in self.foot_list]
-        self.feet_contact = np.array([0.0 for f in self.foot_list], dtype=np.float32)
-        self.scene.actor_introduce(self)
-        self.initial_z = None
 
 
 class AntVecEnv(AntBulletEnv):

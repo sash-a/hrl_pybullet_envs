@@ -1,7 +1,7 @@
 import gym
 
-from hrl_pybullet_envs.envs.ant_flagrun.env import AntFlagrunBulletEnv
-from hrl_pybullet_envs.envs.ant_maze.env import AntMazeBulletEnv
+from hrl_pybullet_envs.envs.ant_flagrun.ant_flagrun_env import AntFlagrunBulletEnv
+from hrl_pybullet_envs.envs.ant_maze.ant_maze_env import AntMazeBulletEnv
 from hrl_pybullet_envs.envs.gather.ant_gather_env import AntGatherBulletEnv
 from hrl_pybullet_envs.envs.gather.point_gather_env import PointGatherBulletEnv
 

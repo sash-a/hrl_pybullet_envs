@@ -2,21 +2,21 @@
 <robot name="plane">
     <!-- Colors -->
     <material name="grey">
-        <color rgba="0.95 0.95 0.95 0.8"/>
+        <color rgba="0.95 0.95 0.95 0.9"/>
     </material>
 
     <!-- Plane -->
     <link name="floor">
         <visual>
             <geometry>
-                <box size="50 50 0.01"/>
+                <box size="500 500 0.1"/>
                 <origin rpy="0 0 0" xyz="0 0 0"/>
             </geometry>
             <material name="grey"/>
         </visual>
         <collision>
             <geometry>
-                <box size="50 50 0.01"/>
+                <box size="500 500 0.1"/>
                 <origin rpy="0 0 0" xyz="0 0 0"/>
             </geometry>
         </collision>

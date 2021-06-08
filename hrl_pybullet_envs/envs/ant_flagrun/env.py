@@ -3,6 +3,7 @@ from typing import Tuple
 import numpy as np
 from pybullet_envs.gym_locomotion_envs import AntBulletEnv, WalkerBaseBulletEnv
 
+from hrl_pybullet_envs.envs.MjAnt import AntMjEnv
 from hrl_pybullet_envs.envs.sizeable_enclosed_scene import SizeableEnclosedScene
 from hrl_pybullet_envs.utils import get_sphere
 
@@ -82,14 +83,17 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         WalkerBaseBulletEnv.electricity_cost = 0  # -2.0
         WalkerBaseBulletEnv.stall_torque_cost = 0  # -0.1
 
-        r = super().reset()
+        s = super().reset()
+        # state modifications
+        rel_dir_to_goal = self.robot.body_xyz[:2] - np.array(self.goal)
+        s = np.concatenate((rel_dir_to_goal, s))
 
         self.goals.clear()
         if not self.manual_goal_creation:  # creating a new goal on every reset if not manually creating the goal
             self.create_targets(self.max_targets)
             self.set_target(*self.goals.pop())
 
-        return r
+        return s
 
     ant_env_rew_weight = 1
     path_rew_weight = 0
@@ -97,17 +101,23 @@ class AntFlagrunBulletEnv(AntBulletEnv):
 
     def step(self, a):
         s, r, d, i = super().step(a)
+
+        # state modifications
+        rel_dir_to_goal = self.robot.body_xyz[:2] - np.array(self.goal)
+        s = np.concatenate((rel_dir_to_goal, s))
+
+        # reward modifications
         r *= AntFlagrunBulletEnv.ant_env_rew_weight
         self.steps_since_goal_change += 1
 
-        dist = np.linalg.norm(self.robot.body_xyz[:2] - np.array(self.goal))
+        # dist = np.linalg.norm(self.robot.body_xyz[:2] - np.array(self.goal))
         # rewarding agent based on how well it is following a straight line to the goal
         path_rew = np.dot(self.robot.body_xyz[:2] - self._goal_start_pos,
                           np.array(self.goal) - self._goal_start_pos) / self._sq_dist_goal
         r += path_rew * AntFlagrunBulletEnv.path_rew_weight
 
         # If close enough to target then give extra reward and move the target.
-        if dist < self.tol:
+        if self.robot.walk_target_dist < self.tol:
             r += AntFlagrunBulletEnv.goal_reach_rew
             try:
                 self.set_target(*self.goals.pop())

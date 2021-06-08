@@ -8,7 +8,7 @@ from hrl_pybullet_envs.envs.sizeable_enclosed_scene import SizeableEnclosedScene
 from hrl_pybullet_envs.utils import get_sphere
 
 
-class AntFlagrunBulletEnv(AntBulletEnv):
+class AntFlagrunBulletEnv(AntMjEnv):
     """Useful env for pretraining the ant for the other envs"""
 
     def __init__(self, size=10, tolerance=0.5, max_targets=100, timeout=200, enclosed=False, manual_goal_creation=False,

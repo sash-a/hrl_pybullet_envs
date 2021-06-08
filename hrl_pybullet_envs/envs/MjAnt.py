@@ -6,8 +6,8 @@ from pybullet_envs.robot_locomotors import Ant, WalkerBase
 
 
 class MjAnt(Ant):
-    def __init__(self):
-        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=8, obs_dim=27, power=2.5)
+    def __init__(self, action_dim=8, obs_dim=23):
+        WalkerBase.__init__(self, "ant.xml", "torso", action_dim=action_dim, obs_dim=obs_dim, power=2.5)
 
     def calc_state(self):
         super().calc_state()
@@ -29,7 +29,7 @@ class MjAnt(Ant):
 
 class AntMjEnv(WalkerBaseBulletEnv):
     def __init__(self):
-        self.robot = MjAnt()
+        self.robot = MjAnt(obs_dim=25)
         super().__init__(self.robot)
 
     def step(self, a):
@@ -58,6 +58,11 @@ class AntMjEnv(WalkerBaseBulletEnv):
 
         return state, reward, bool(done), {'ctrl_cost': ctrl_cost, 'survive_reward': survive_reward,
                                            'progress':  progress}
+
+    def reset(self):
+        if hasattr(self, '_p'):
+            self._p.resetBasePositionAndOrientation(self.robot.objects[0], [0, 0, 1], [0, 0, 0, 1])
+        return super().reset()
 
     def update_foot_contacts(self):
         for i, f in enumerate(self.robot.feet):

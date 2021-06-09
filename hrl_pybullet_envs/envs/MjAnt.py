@@ -6,14 +6,32 @@ from pybullet_envs.robot_locomotors import Ant, WalkerBase
 
 
 class MjAnt(Ant):
-    def __init__(self, action_dim=8, obs_dim=23):
+    def __init__(self, start_pos=(0, 0), action_dim=8, obs_dim=23):
         WalkerBase.__init__(self, "ant.xml", "torso", action_dim=action_dim, obs_dim=obs_dim, power=2.5)
+        self.start_pos = start_pos
 
     def calc_state(self):
-        super().calc_state()
+        # super().calc_state()
+        j = np.array([j.current_relative_position() for j in self.ordered_joints],
+                     dtype=np.float32).flatten()
+        # even elements [0::2] position, scaled to -1..+1 between limits
+        # odd elements  [1::2] angular speed, scaled to show -1..+1
+        self.joint_speeds = j[1::2]
+        self.joints_at_limit = np.count_nonzero(np.abs(j[0::2]) > 0.99)
+
+        body_pose = self.robot_body.pose()
+        parts_xyz = np.array([p.pose().xyz() for p in self.parts.values()]).flatten()
+        self.body_xyz = (parts_xyz[0::3].mean(), parts_xyz[1::3].mean(), body_pose.xyz()[2])
+        self.body_real_xyz = body_pose.xyz()
+        self.body_rpy = body_pose.rpy()
+        z = self.body_xyz[2]
+        if self.initial_z == None:
+            self.initial_z = z
+        self.walk_target_dist = np.linalg.norm(
+            [self.walk_target_y - self.body_real_xyz[1], self.walk_target_x - self.body_real_xyz[0]])
+
         pose = self.parts['torso'].get_pose()
         qpos = np.hstack((pose, [j.get_position() for j in self.ordered_joints])).flatten()
-
         velocity = self.parts['torso'].speed()
         qvel = np.hstack((velocity[0], velocity[1], [j.get_velocity() for j in self.ordered_joints])).flatten()
 
@@ -28,8 +46,8 @@ class MjAnt(Ant):
 
 
 class AntMjEnv(WalkerBaseBulletEnv):
-    def __init__(self):
-        self.robot = MjAnt(obs_dim=25)
+    def __init__(self, start_pos=(0, 0)):
+        self.robot = MjAnt(start_pos=start_pos, obs_dim=25)
         super().__init__(self.robot)
 
     progress_weight = 1
@@ -64,8 +82,10 @@ class AntMjEnv(WalkerBaseBulletEnv):
                                            'progress':  progress}
 
     def reset(self):
-        if hasattr(self, '_p'):
-            self._p.resetBasePositionAndOrientation(self.robot.objects[0], [0, 0, 1], [0, 0, 0, 1])
+        if not hasattr(self, '_p'):
+            super().reset()
+
+        self._p.resetBasePositionAndOrientation(self.robot.objects[0], [*self.robot.start_pos, 0.5], [0, 0, 0, 1])
         return super().reset()
 
     def update_foot_contacts(self):

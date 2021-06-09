@@ -32,6 +32,10 @@ class AntMjEnv(WalkerBaseBulletEnv):
         self.robot = MjAnt(obs_dim=25)
         super().__init__(self.robot)
 
+    progress_weight = 1
+    ctrl_cost_weight = 1
+    survive_reward_weight = 1
+
     def step(self, a):
         if not self.scene.multiplayer:
             self.robot.apply_action(a)
@@ -48,10 +52,10 @@ class AntMjEnv(WalkerBaseBulletEnv):
 
         potential_old = self.potential
         self.potential = self.robot.calc_potential()
-        progress = float(self.potential - potential_old)
 
-        ctrl_cost = .5 * np.square(a).sum()
-        survive_reward = 1.0
+        progress = self.progress_weight * float(self.potential - potential_old)
+        ctrl_cost = self.ctrl_cost_weight * .5 * np.square(a).sum()
+        survive_reward = self.survive_reward_weight * 1.0
         reward = progress - ctrl_cost + survive_reward
 
         self.update_foot_contacts()

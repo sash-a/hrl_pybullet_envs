@@ -80,8 +80,11 @@ class AntFlagrunBulletEnv(AntMjEnv):
                                                     [0, 0, 0, 1])
 
     def reset(self):
-        WalkerBaseBulletEnv.electricity_cost = 0  # -2.0
-        WalkerBaseBulletEnv.stall_torque_cost = 0  # -0.1
+        # WalkerBaseBulletEnv.electricity_cost = 0  # -2.0
+        # WalkerBaseBulletEnv.stall_torque_cost = 0  # -0.1
+
+        AntMjEnv.ctrl_cost_weight = 0
+        AntMjEnv.survive_reward_weight = 0
 
         s = super().reset()
         # state modifications
@@ -102,8 +105,8 @@ class AntFlagrunBulletEnv(AntMjEnv):
     def step(self, a):
         s, r, d, i = super().step(a)
 
-        # state modifications
-        rel_dir_to_goal = self.robot.body_xyz[:2] - np.array(self.goal)
+        # state modifications: adding in vector towards goal
+        rel_dir_to_goal = np.array(self.goal) - self.robot.body_xyz[:2]
         s = np.concatenate((rel_dir_to_goal, s))
 
         # reward modifications

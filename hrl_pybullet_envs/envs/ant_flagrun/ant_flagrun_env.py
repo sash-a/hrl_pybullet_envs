@@ -61,7 +61,7 @@ class AntFlagrunBulletEnv(AntMjEnv):
     def create_targets(self, n):
         """
         Used to create multiple goals such that all agents run in parallel will continue to generate the same values.
-        Each generation these should be cleared and recreated
+        Each generation/epoch these should be cleared and recreated
         """
         self.goals = [self.create_target() for _ in range(n)]
 
@@ -107,6 +107,7 @@ class AntFlagrunBulletEnv(AntMjEnv):
 
         # state modifications: adding in vector towards goal
         rel_dir_to_goal = np.array(self.goal) - self.robot.body_xyz[:2]
+        rel_dir_to_goal = rel_dir_to_goal / np.linalg.norm(rel_dir_to_goal)
         s = np.concatenate((rel_dir_to_goal, s))
 
         # reward modifications

@@ -74,7 +74,7 @@ class AntFlagrunBulletEnv(AntMjEnv):
         self._sq_dist_goal = np.linalg.norm(np.array([x, y]) - self.robot.robot_body.get_position()[:2]) ** 2
         self._goal_start_pos = self.robot.robot_body.get_position()[:2]
 
-        if self.isRender:
+        if self.isRender and self.flag is not None:
             self._p.resetBasePositionAndOrientation(self.flag.bodies[0],
                                                     [self.walk_target_x, self.walk_target_y, 0.7],
                                                     [0, 0, 0, 1])
@@ -100,6 +100,7 @@ class AntFlagrunBulletEnv(AntMjEnv):
 
     ant_env_rew_weight = 1
     path_rew_weight = 0
+    dist_rew_weight = 0
     goal_reach_rew = 5000
 
     def step(self, a):
@@ -119,6 +120,8 @@ class AntFlagrunBulletEnv(AntMjEnv):
         path_rew = np.dot(self.robot.body_xyz[:2] - self._goal_start_pos,
                           np.array(self.goal) - self._goal_start_pos) / self._sq_dist_goal
         r += path_rew * AntFlagrunBulletEnv.path_rew_weight
+
+        r += -self.robot.walk_target_dist * AntFlagrunBulletEnv.dist_rew_weight
 
         # If close enough to target then give extra reward and move the target.
         if self.robot.walk_target_dist < self.tol:

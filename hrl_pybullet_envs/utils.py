@@ -48,12 +48,15 @@ def get_sphere(p, x, y, z):
     return BodyPart(p, part_name, bodies, 0, -1)
 
 
-def debug_draw_point(bullet_client, x, y):
+def debug_draw_point(bullet_client, x, y, colour=None):
+    if colour is None:
+        colour = [0, 0, 0]
+
     bullet_client.addUserDebugLine([x + 0.5, y + 0.5, 0],
                                    [x - 0.5, y - 0.5, 0],
                                    lifeTime=0.5,
-                                   lineColorRGB=[0.1, 0.2, 0.8])
+                                   lineColorRGB=colour)
     bullet_client.addUserDebugLine([x + 0.5, y - 0.5, 0],
                                    [x - 0.5, y + 0.5, 0],
                                    lifeTime=0.5,
-                                   lineColorRGB=[0.1, 0.2, 0.8])
+                                   lineColorRGB=colour)

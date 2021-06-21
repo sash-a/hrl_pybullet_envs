@@ -1,6 +1,7 @@
 # modified from: pybulletgym/envs/mujoco/robots/locomotors/ant.py
 
 import numpy as np
+from gym.spaces import Box
 from pybullet_envs.gym_locomotion_envs import WalkerBaseBulletEnv, AntBulletEnv
 from pybullet_envs.robot_locomotors import Ant, WalkerBase
 
@@ -9,6 +10,7 @@ class MjAnt(Ant):
     def __init__(self, start_pos=(0, 0), action_dim=8, obs_dim=23):
         WalkerBase.__init__(self, "ant.xml", "torso", action_dim=action_dim, obs_dim=obs_dim, power=2.5)
         self.start_pos = start_pos
+        self.observation_space = Box(-np.inf, np.inf, shape=(23,))
 
     def calc_state(self):
         # super().calc_state()
@@ -46,13 +48,13 @@ class MjAnt(Ant):
 
 
 class AntMjEnv(WalkerBaseBulletEnv):
-    def __init__(self, start_pos=(0, 0)):
+    def __init__(self, start_pos=(0, 0), progress_weight=1., ctrl_cost_weight=1., survive_reward_weight=1.):
         self.robot = MjAnt(start_pos=start_pos, obs_dim=25)
         super().__init__(self.robot)
 
-    progress_weight = 1
-    ctrl_cost_weight = 1
-    survive_reward_weight = 1
+        self.progress_weight = progress_weight
+        self.ctrl_cost_weight = ctrl_cost_weight
+        self.survive_reward_weight = survive_reward_weight
 
     def step(self, a):
         if not self.scene.multiplayer:

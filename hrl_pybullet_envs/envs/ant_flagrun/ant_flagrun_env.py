@@ -115,7 +115,6 @@ class AntFlagrunBulletEnv(AntMjEnv):
         r *= AntFlagrunBulletEnv.ant_env_rew_weight
         self.steps_since_goal_change += 1
 
-        # dist = np.linalg.norm(self.robot.body_xyz[:2] - np.array(self.goal))
         # rewarding agent based on how well it is following a straight line to the goal
         path_rew = np.dot(self.robot.body_xyz[:2] - self._goal_start_pos,
                           np.array(self.goal) - self._goal_start_pos) / self._sq_dist_goal

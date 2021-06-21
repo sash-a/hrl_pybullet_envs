@@ -9,14 +9,14 @@
     <link name="obstacle">
         <visual>
             <geometry>
-                <box size="10 12 3"/>
+                <box size="8 8 3"/>
                 <origin rpy="0 0 0" xyz="0 0 0"/>
             </geometry>
             <material name="grey"/>
         </visual>
         <collision>
             <geometry>
-                <box size="10 12 3"/>
+                <box size="8 8 3"/>
                 <origin rpy="0 0 0" xyz="0 0 0"/>
             </geometry>
         </collision>

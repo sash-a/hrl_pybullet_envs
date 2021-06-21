@@ -6,10 +6,11 @@ from .maze_utils import Point
 
 
 class MazeScene(SizeableEnclosedScene):
-    def __init__(self, bullet_client, gravity, timestep, frame_skip, world_size):
+    def __init__(self, bullet_client, gravity, timestep, frame_skip):
+        world_size = (16, 12)
         super().__init__(bullet_client, gravity, timestep, frame_skip, world_size, (0, 0))
-        self.box_pos = (0, 4)
-        self.box_size = (10, 12)
+        self.box_pos = (0, -2)
+        self.box_size = (8, 8)  # this doesn't affect the size, this is simply copying from the asset
 
         box_p1 = Point(self.box_pos[0] + self.box_size[0] / 2, self.box_pos[1] + self.box_size[1] / 2)
         box_p2 = Point(self.box_pos[0] - self.box_size[0] / 2, self.box_pos[1] - self.box_size[1] / 2)
@@ -20,7 +21,7 @@ class MazeScene(SizeableEnclosedScene):
                            (box_p2, Point(box_p1.x, box_p2.y))]
 
         world_p1 = Point(world_size[0] / 2, world_size[1] / 2)
-        world_p2 = Point(-world_size[1] / 2, -world_size[1] / 2)
+        world_p2 = Point(-world_size[0] / 2, -world_size[1] / 2)
 
         self.world_bounds = [(world_p1, Point(world_p2.x, world_p1.y)),
                              (world_p1, Point(world_p1.x, world_p2.y)),

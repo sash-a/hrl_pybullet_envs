@@ -46,3 +46,14 @@ def get_sphere(p, x, y, z):
     bodies = [body]
     p.changeVisualShape(body, -1, rgbaColor=[0, 0.2, 0.8, 0.75])
     return BodyPart(p, part_name, bodies, 0, -1)
+
+
+def debug_draw_point(bullet_client, x, y):
+    bullet_client.addUserDebugLine([x + 0.5, y + 0.5, 0],
+                                   [x - 0.5, y - 0.5, 0],
+                                   lifeTime=0.5,
+                                   lineColorRGB=[0.1, 0.2, 0.8])
+    bullet_client.addUserDebugLine([x + 0.5, y - 0.5, 0],
+                                   [x - 0.5, y + 0.5, 0],
+                                   lifeTime=0.5,
+                                   lineColorRGB=[0.1, 0.2, 0.8])

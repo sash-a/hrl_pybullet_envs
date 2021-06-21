@@ -5,7 +5,8 @@ from pybullet_envs.gym_locomotion_envs import AntBulletEnv
 
 from hrl_pybullet_envs.envs.MjAnt import AntMjEnv
 from hrl_pybullet_envs.envs.ant_maze.maze_scene import MazeScene
-from hrl_pybullet_envs.envs.ant_maze.maze_utils import pol2cart, Point, intersects, intersection, quadrant
+from hrl_pybullet_envs.envs.ant_maze.maze_utils import pol2cart, Point, intersection, quadrant
+from hrl_pybullet_envs.utils import debug_draw_point
 
 
 class AntMazeMjEnv(AntMjEnv):
@@ -42,38 +43,34 @@ class AntMazeMjEnv(AntMjEnv):
         sensor = [0 for _ in range(self.n_bins)]
         robot_pos = self.robot_body.pose().xyz()[:2]
         for i in range(self.n_bins):
-            polar = (self.sensor_range, ((i + 1) / self.n_bins) * self.sensor_span)
-            cart = pol2cart(*polar)  # cartesian end point of sensor starting from origin
-            sensor_end_point = robot_pos + cart
-            quadrant_normed_sensor_end = quadrant(Point(*(np.array(sensor_end_point) - robot_pos)))
-            if self.debug:
-                self._p.addUserDebugLine([*robot_pos, 0], [*sensor_end_point, 0], lifeTime=0.5)
+            # each loop sensor is 1 more 'nth' of the sensor span - special case for 2pi because 0 == 2pi
+            if self.sensor_span == 2 * np.pi:
+                polar = (self.sensor_range, ((i + 1) / (self.n_bins)) * self.sensor_span)
+            else:
+                polar = (self.sensor_range, (i / (self.n_bins - 1)) * self.sensor_span)
+            sensor_vec = robot_pos + pol2cart(*polar)  # line coming from robot in dir
+            # What quadrant the sensor would be in if it started from origin, used to avoid sensing behind robot
+            sensor_quadrant = quadrant(Point(*(np.array(sensor_vec) - robot_pos)))
 
-            for line in self.scene.bounds:
-                inter = intersection(Point(*robot_pos), Point(*sensor_end_point), *line)
-                if inter is None:  # no intersection leave reading at current
+            if self.debug:
+                self._p.addUserDebugLine([*robot_pos, 0], [*sensor_vec, 0], lifeTime=0.5)
+
+            for line in self.scene.bounds:  # Start and end points of bounding boxes around scene obstacles
+                # find intersection of sensor line and current bounding line
+                inter = intersection(Point(*robot_pos), Point(*sensor_vec), *line)
+                if inter is None:  # no intersection
                     continue
 
                 dist = np.linalg.norm(robot_pos - np.array([*inter]))
-                if dist > self.sensor_range:  # too far leave reading at current
+                if dist > self.sensor_range:  # too far
                     continue
 
-                if quadrant_normed_sensor_end != quadrant(Point(*(np.array([*inter]) - robot_pos))):
-                    continue  # the intersection is directly behind the sensor
+                if sensor_quadrant != quadrant(Point(*(np.array([*inter]) - robot_pos))):
+                    continue  # intersection is directly behind the sensor
 
                 if self.debug:
-                    self.debug_draw_point(inter)
+                    debug_draw_point(self.scene._p, *inter)
 
-                sensor[i] = max(sensor[i], 1. - dist / self.sensor_range)
+                sensor[i] = max(sensor[i], 1. - dist / self.sensor_range)  # closest sensor value is added to list
 
         return sensor
-
-    def debug_draw_point(self, p: Point):
-        self.scene._p.addUserDebugLine([p.x + 0.5, p.y + 0.5, 0],
-                                       [p.x - 0.5, p.y - 0.5, 0],
-                                       lifeTime=0.5,
-                                       lineColorRGB=[0.1, 0.2, 0.8])
-        self.scene._p.addUserDebugLine([p.x + 0.5, p.y - 0.5, 0],
-                                       [p.x - 0.5, p.y + 0.5, 0],
-                                       lifeTime=0.5,
-                                       lineColorRGB=[0.1, 0.2, 0.8])

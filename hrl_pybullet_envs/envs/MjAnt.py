@@ -87,8 +87,9 @@ class AntMjEnv(WalkerBaseBulletEnv):
         if not hasattr(self, '_p'):
             super().reset()
 
+        r = super().reset()
         self._p.resetBasePositionAndOrientation(self.robot.objects[0], [*self.robot.start_pos, 0.5], [0, 0, 0, 1])
-        return super().reset()
+        return r
 
     def update_foot_contacts(self):
         for i, f in enumerate(self.robot.feet):

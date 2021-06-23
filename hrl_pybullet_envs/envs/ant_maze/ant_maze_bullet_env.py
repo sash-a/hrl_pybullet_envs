@@ -1,24 +1,16 @@
 from typing import List
 
-from enum import Enum
 import numpy as np
 from pybullet_envs.gym_locomotion_envs import AntBulletEnv
 
-from hrl_pybullet_envs.envs.MjAnt import AntMjEnv
 from hrl_pybullet_envs.envs.ant_maze.maze_scene import MazeScene
 from hrl_pybullet_envs.envs.ant_maze.maze_utils import pol2cart, Point, intersection, quadrant
-from hrl_pybullet_envs.utils import debug_draw_point
+from hrl_pybullet_envs.utils import debug_draw_point, PositionEncoding
 from gym.spaces import Box
 import gym
 
 
-class PositionEncoding(Enum):
-    normed_vec = 0  # normalized vector from robot position to target
-    angle = 1  # sin and cos of angle to target
-    # TODO add target to sensor?
-
-
-class AntMazeMjEnv(AntMjEnv):
+class AntMazeBulletEnv(AntBulletEnv):
     """
     At evaluation time, we evaluate the agent only on its ability to reach (0,16). We define a “success” as being within
     an L2 distance of 5 from the target on the ultimate step of the episode. - Data efficient HRL
@@ -28,9 +20,8 @@ class AntMazeMjEnv(AntMjEnv):
 
     def __init__(self, n_bins: int = 8, sensor_range: float = 4, sensor_span: float = np.pi,
                  target_encoding: PositionEncoding = PositionEncoding.normed_vec, tol=2, seed=None, debug=False):
-        super().__init__(start_pos=(-6, -4), progress_weight=1, ctrl_cost_weight=0, survive_reward_weight=1)
-        self.walk_target_x = 0
-        self.walk_target_y = -15
+        super().__init__()
+        self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -6, -4, 0.25
 
         self.n_bins = n_bins
         self.sensor_range = float(sensor_range)
@@ -38,7 +29,7 @@ class AntMazeMjEnv(AntMjEnv):
 
         self.tol = tol
         self.target_encoding = target_encoding
-        self.target: np.ndarray = np.array(AntMazeMjEnv.eval_target)
+        self.target: np.ndarray = np.array(AntMazeBulletEnv.eval_target)
 
         self.mpi_common_rand, _ = gym.utils.seeding.np_random(seed)
 
@@ -46,7 +37,7 @@ class AntMazeMjEnv(AntMjEnv):
 
         self.action_space = self.robot.action_space
 
-        self.observation_space = Box(-np.inf, np.inf, shape=(self.robot.observation_space.shape[0] + n_bins + 2,))
+        self.observation_space = Box(-np.inf, np.inf, shape=(self.robot.observation_space.shape[0] - 2 + n_bins + 2,))
 
     def create_single_player_scene(self, bullet_client):
         self.stadium_scene = MazeScene(bullet_client, 9.8, 0.0165 / 4, 4)
@@ -64,25 +55,29 @@ class AntMazeMjEnv(AntMjEnv):
             angle_to_target = np.arctan2(*vec_to_target[::-1]) - self.robot_body.pose().rpy()[2]
             target_obs = [np.sin(angle_to_target), np.cos(angle_to_target)]
 
-        return np.concatenate((target_obs, ant_obs, wall_obs))
+        return np.concatenate((target_obs, [ant_obs[0]], ant_obs[3:], wall_obs))
 
     def step(self, a):
         if self.debug:
             debug_draw_point(self.scene._p, *self.target, colour=[0.1, 0.5, 0.7])
         ant_obs, ant_rew, d, i = super().step(a)
         obs = self._get_obs(ant_obs)
-        rew = ant_rew
+
+        dist = np.linalg.norm(self.target - self.robot_body.pose().xyz()[:2])
+        rew = -dist / self.scene.dt
 
         # TODO possibly cache this to make it faster
-        if np.linalg.norm(self.target - self.robot_body.pose().xyz()[:2]) < self.tol:
+        if dist < self.tol:
             rew += 10000
             d = True
 
         return obs, rew, d, i
 
     def reset(self):
-        self.target = AntMazeMjEnv.targets[self.mpi_common_rand.randint(0, len(AntMazeMjEnv.targets))]
+        self.target = AntMazeBulletEnv.targets[self.mpi_common_rand.randint(0, len(AntMazeBulletEnv.targets))]
         ant_obs = super().reset()
+        start_xyz = [self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z]
+        self._p.resetBasePositionAndOrientation(self.robot.objects[0], start_xyz, [0, 0, 0, 1])
         return self._get_obs(ant_obs)
 
     def sense_walls(self) -> List[float]:

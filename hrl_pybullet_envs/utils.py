@@ -2,6 +2,7 @@
 
 import inspect
 import os
+from enum import Enum
 
 from pybullet_envs.robot_bases import BodyPart
 
@@ -60,3 +61,9 @@ def debug_draw_point(bullet_client, x, y, colour=None):
                                    [x - 0.5, y + 0.5, 0],
                                    lifeTime=0.5,
                                    lineColorRGB=colour)
+
+
+class PositionEncoding(Enum):
+    normed_vec = 0  # normalized vector from robot position to target
+    angle = 1  # sin and cos of angle to target
+    # TODO add target to sensor?

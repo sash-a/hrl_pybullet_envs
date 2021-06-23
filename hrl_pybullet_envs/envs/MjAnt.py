@@ -88,7 +88,7 @@ class AntMjEnv(WalkerBaseBulletEnv):
             super().reset()
 
         r = super().reset()
-        self._p.resetBasePositionAndOrientation(self.robot.objects[0], [*self.robot.start_pos, 0.5], [0, 0, 0, 1])
+        self._p.resetBasePositionAndOrientation(self.robot.objects[0], [*self.robot.start_pos, 0.25], [0, 0, 0, 1])
         return r
 
     def update_foot_contacts(self):

@@ -55,7 +55,9 @@ class AntMazeBulletEnv(AntBulletEnv):
             angle_to_target = np.arctan2(*vec_to_target[::-1]) - self.robot_body.pose().rpy()[2]
             target_obs = [np.sin(angle_to_target), np.cos(angle_to_target)]
 
+        # TODO do we need the angle obs or can it be created outside?
         return np.concatenate((target_obs, [ant_obs[0]], ant_obs[3:], wall_obs))
+        # return np.concatenate((ant_obs, wall_obs))
 
     def step(self, a):
         if self.debug:
@@ -74,10 +76,15 @@ class AntMazeBulletEnv(AntBulletEnv):
         return obs, rew, d, i
 
     def reset(self):
-        self.target = AntMazeBulletEnv.targets[self.mpi_common_rand.randint(0, len(AntMazeBulletEnv.targets))]
-        ant_obs = super().reset()
+        if not hasattr(self, '_p'):
+            super().reset()
+
         start_xyz = [self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z]
+        self.target = AntMazeBulletEnv.targets[self.mpi_common_rand.randint(0, len(AntMazeBulletEnv.targets))]
+        # self._p.resetBasePositionAndOrientation(self.robot.objects[0], start_xyz, [0, 0, 0, 1])
+        ant_obs = super().reset()
         self._p.resetBasePositionAndOrientation(self.robot.objects[0], start_xyz, [0, 0, 0, 1])
+
         return self._get_obs(ant_obs)
 
     def sense_walls(self) -> List[float]:

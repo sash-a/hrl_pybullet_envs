@@ -12,7 +12,7 @@ class AntFlagrunBulletEnv(AntBulletEnv):
     """Useful env for pretraining the ant for the other envs"""
 
     def __init__(self, size=10, tolerance=0.5, max_targets=100, max_target_dist=0, timeout=200, enclosed=False,
-                 manual_goal_creation=False, seed=123, debug=False):
+                 switch_flag_on_collision=True, manual_goal_creation=False, seed=123, debug=False):
         assert (max_target_dist == 0 and max_targets > 0) or (max_targets <= 0 and max_target_dist > 0), \
             'cannot have both max_targets and max_target dist set at the same time'
         super().__init__()
@@ -22,6 +22,7 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         self.max_target_dist = max_target_dist
         self.timeout = timeout
         self.enclosed = enclosed
+        self.switch_flag_on_collision = switch_flag_on_collision
         self.manual_goal_creation = manual_goal_creation
         self.debug = debug
 
@@ -67,8 +68,8 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         g = (world_bound + 1, world_bound + 1)
         r = self.mpi_common_rand
         while not (-world_bound < g[0] < world_bound and -world_bound < g[1] < world_bound):
-            g = (r.uniform(1, self.max_target_dist / 2) * (r.randint(0, 2) * 2 - 1),
-                 r.uniform(1, self.max_target_dist / 2) * (r.randint(0, 2) * 2 - 1))
+            g = (r.uniform(self.tol, self.max_target_dist / 2) * (r.randint(0, 2) * 2 - 1),
+                 r.uniform(self.tol, self.max_target_dist / 2) * (r.randint(0, 2) * 2 - 1))
             g += self.robot.body_real_xyz[:2]
 
         return g
@@ -152,9 +153,10 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         if self.robot.walk_target_dist < self.tol:
             r += AntFlagrunBulletEnv.goal_reach_rew
             try:
-                self.next_target()
-                i['target'] = self.goal
-                self.steps_since_goal_change = 0
+                if self.switch_flag_on_collision:
+                    self.next_target()
+                    i['target'] = self.goal
+                    self.steps_since_goal_change = 0
             except IndexError:
                 d = True
 

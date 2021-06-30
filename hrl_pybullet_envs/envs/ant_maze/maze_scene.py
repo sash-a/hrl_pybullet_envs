@@ -20,13 +20,13 @@ class MazeScene(SizeableEnclosedScene):
                            (box_p2, Point(box_p2.x, box_p1.y)),
                            (box_p2, Point(box_p1.x, box_p2.y))]
 
-        world_p1 = Point(world_size[0] / 2, world_size[1] / 2)
-        world_p2 = Point(-world_size[0] / 2, -world_size[1] / 2)
-
-        self.world_bounds = [(world_p1, Point(world_p2.x, world_p1.y)),
-                             (world_p1, Point(world_p1.x, world_p2.y)),
-                             (world_p2, Point(world_p2.x, world_p1.y)),
-                             (world_p2, Point(world_p1.x, world_p2.y))]
+        # world_p1 = Point(world_size[0] / 2, world_size[1] / 2)
+        # world_p2 = Point(-world_size[0] / 2, -world_size[1] / 2)
+        #
+        # self.world_bounds = [(world_p1, Point(world_p2.x, world_p1.y)),
+        #                      (world_p1, Point(world_p1.x, world_p2.y)),
+        #                      (world_p2, Point(world_p2.x, world_p1.y)),
+        #                      (world_p2, Point(world_p1.x, world_p2.y))]
 
     bounds = property(lambda self: self.world_bounds + self.box_bounds)
 

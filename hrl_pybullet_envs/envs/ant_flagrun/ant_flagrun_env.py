@@ -1,20 +1,23 @@
-from typing import Tuple
+from typing import Tuple, List
 
 import numpy as np
+from gym.spaces import Box
 from pybullet_envs.gym_locomotion_envs import AntBulletEnv, WalkerBaseBulletEnv
 
 from hrl_pybullet_envs.envs.MjAnt import AntMjEnv
+from hrl_pybullet_envs.envs.ant_maze.maze_utils import pol2cart, quadrant, Point, intersection
 from hrl_pybullet_envs.envs.sizeable_enclosed_scene import SizeableEnclosedScene
-from hrl_pybullet_envs.utils import get_sphere
+from hrl_pybullet_envs.utils import get_sphere, debug_draw_point
 
 
 class AntFlagrunBulletEnv(AntBulletEnv):
     """Useful env for pretraining the ant for the other envs"""
 
-    def __init__(self, size=10, tolerance=0.5, max_targets=100, max_target_dist=0, timeout=200, enclosed=False,
+    def __init__(self, size=10, tolerance=0.5, max_targets=100, max_target_dist=0, timeout=200, enclosed=True,
+                 use_sensor=False, sensor_bins=8, sensor_span=np.pi, sensor_range=4,
                  switch_flag_on_collision=True, manual_goal_creation=False, seed=123, debug=False):
         assert (max_target_dist == 0 and max_targets > 0) or (max_targets <= 0 and max_target_dist > 0), \
-            'cannot have both max_targets and max_target dist set at the same time'
+            'cannot have both max_targets and max_target_dist set at the same time'
         super().__init__()
         self.size = size
         self.tol = tolerance
@@ -25,6 +28,12 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         self.switch_flag_on_collision = switch_flag_on_collision
         self.manual_goal_creation = manual_goal_creation
         self.debug = debug
+
+        # sensors
+        self.use_sensor = use_sensor
+        self.n_bins = sensor_bins
+        self.sensor_span = sensor_span
+        self.sensor_range = sensor_range
 
         self.flag = None
 
@@ -41,10 +50,15 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         self._sq_dist_goal = 0  # distance to goal on step new goal received
         self._goal_start_pos = np.array([0, 0])  # position on step new goal received
 
+        if use_sensor:
+            super_obs = self.robot.observation_space
+            self.observation_space = Box(-np.inf, np.inf, (super_obs.shape[0] + sensor_bins,))
+
     goal = property(lambda self: (self.walk_target_x, self.walk_target_y))
 
     def create_single_player_scene(self, bullet_client):
-        if self.enclosed:  # if enclosed make the enclosing area larger so that no targets spawn on/past the wall
+        if self.enclosed or self.use_sensor:
+            # if enclosed make the enclosing area larger so that no targets spawn on/past the wall
             scene = self.stadium_scene = SizeableEnclosedScene(bullet_client, 9.8, 0.0165 / 4, 4, (self.size + 2,) * 2)
         else:
             scene = super().create_single_player_scene(bullet_client)
@@ -101,6 +115,15 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         else:
             self.set_target(*self.goals.pop())
 
+    def _get_obs(self, env_obs):
+        if self.use_sensor:
+            env_obs = np.concatenate((env_obs, self.scene.sense_walls(self.n_bins,
+                                                                      self.sensor_span,
+                                                                      self.sensor_range,
+                                                                      self.robot.body_real_xyz[:2],
+                                                                      self.debug)))
+        return env_obs
+
     def reset(self):
         WalkerBaseBulletEnv.electricity_cost = 0  # -2.0
         WalkerBaseBulletEnv.stall_torque_cost = 0  # -0.1
@@ -121,7 +144,7 @@ class AntFlagrunBulletEnv(AntBulletEnv):
             self.create_targets(self.max_targets)
             self.next_target()
 
-        return s
+        return self._get_obs(s)
 
     ant_env_rew_weight = 1
     path_rew_weight = 0
@@ -130,9 +153,9 @@ class AntFlagrunBulletEnv(AntBulletEnv):
 
     def step(self, a):
         s, r, d, i = super().step(a)
-
+        s = self._get_obs(s)
         # state modifications: adding in vector towards goal
-        # rel_dir_to_goal = np.array(self.goal) - self.robot.body_xyz[:2]
+        # rel_dir_to_goal = np.array(self.goal) - self.robot.body_real_xyz[:2]
         # rel_dir_to_goal = rel_dir_to_goal / np.linalg.norm(rel_dir_to_goal)
         # s = np.concatenate((rel_dir_to_goal, s))
 
@@ -141,7 +164,7 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         self.steps_since_goal_change += 1
 
         # rewarding agent based on how well it is following a straight line to the goal
-        path_rew = np.dot(self.robot.body_xyz[:2] - self._goal_start_pos,
+        path_rew = np.dot(self.robot.body_real_xyz[:2] - self._goal_start_pos,
                           np.array(self.goal) - self._goal_start_pos) / self._sq_dist_goal
         r += path_rew * AntFlagrunBulletEnv.path_rew_weight
 

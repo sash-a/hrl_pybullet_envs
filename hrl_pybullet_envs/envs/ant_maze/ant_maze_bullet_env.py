@@ -44,7 +44,8 @@ class AntMazeBulletEnv(AntBulletEnv):
         return self.stadium_scene
 
     def _get_obs(self, ant_obs):
-        wall_obs = self.sense_walls()
+        wall_obs = self.scene.sense_walls(self.n_bins, self.sensor_span, self.sensor_range,
+                                          self.robot.body_real_xyz[:2], self.debug)
 
         target_obs = []
         vec_to_target = self.target - self.robot_body.pose().xyz()[:2]
@@ -86,39 +87,3 @@ class AntMazeBulletEnv(AntBulletEnv):
         self._p.resetBasePositionAndOrientation(self.robot.objects[0], start_xyz, [0, 0, 0, 1])
 
         return self._get_obs(ant_obs)
-
-    def sense_walls(self) -> List[float]:
-        sensor = [0 for _ in range(self.n_bins)]
-        robot_pos = self.robot_body.pose().xyz()[:2]
-        for i in range(self.n_bins):
-            # each loop sensor is 1 more 'nth' of the sensor span - special case for 2pi because 0 == 2pi
-            if self.sensor_span == 2 * np.pi:
-                polar = (self.sensor_range, ((i + 1) / self.n_bins) * self.sensor_span)
-            else:
-                polar = (self.sensor_range, (i / (self.n_bins - 1)) * self.sensor_span)
-            sensor_vec = robot_pos + pol2cart(*polar)  # line coming from robot in dir
-            # What quadrant the sensor would be in if it started from origin, used to avoid sensing behind robot
-            sensor_quadrant = quadrant(Point(*(np.array(sensor_vec) - robot_pos)))
-
-            if self.debug:
-                self._p.addUserDebugLine([*robot_pos, 0], [*sensor_vec, 0], lifeTime=0.5)
-
-            for line in self.scene.bounds:  # Start and end points of bounding boxes around scene obstacles
-                # find intersection of sensor line and current bounding line
-                inter = intersection(Point(*robot_pos), Point(*sensor_vec), *line)
-                if inter is None:  # no intersection
-                    continue
-
-                dist = np.linalg.norm(robot_pos - np.array([*inter]))
-                if dist > self.sensor_range:  # too far
-                    continue
-
-                if sensor_quadrant != quadrant(Point(*(np.array([*inter]) - robot_pos))):
-                    continue  # intersection is directly behind the sensor
-
-                if self.debug:
-                    debug_draw_point(self.scene._p, *inter)
-
-                sensor[i] = max(sensor[i], 1. - dist / self.sensor_range)  # closest sensor value is added to list
-
-        return sensor

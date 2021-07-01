@@ -136,8 +136,10 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         # AntMjEnv.ctrl_cost_weight = 0
         # AntMjEnv.survive_reward_weight = 0
 
-        s = super().reset()
+        super().reset()
         self._p.resetBasePositionAndOrientation(self.robot.objects[0], [0, 0, 0.25], [0, 0, 0, 1])
+        self.robot.robot_specific_reset(self.scene._p)
+        s = self.robot.calc_state()
 
         # state modifications
         # rel_dir_to_goal = -np.array(self.goal)

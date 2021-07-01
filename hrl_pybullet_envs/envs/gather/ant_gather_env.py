@@ -51,7 +51,7 @@ class AntGatherBulletEnv(AntBulletEnv):
 
         self.observation_space = self.robot.observation_space
         n_food_obs = 2 * n_bins if self.use_sensor else 2 * (min(n_food, n_bins) + min(n_poison, n_bins))
-        self.observation_space.shape = (self.robot.observation_space.shape[0] + n_food_obs,)
+        self.observation_space.shape = (self.robot.observation_space.shape[0] - 2 + n_food_obs,)
 
     def create_single_player_scene(self, bullet_client):
         self.stadium_scene = GatherScene(bullet_client, 9.8, 0.0165 / 4, 4,
@@ -65,17 +65,23 @@ class AntGatherBulletEnv(AntBulletEnv):
             self.stadium_scene.seed(seed)
 
     def reset(self):
-        r = super().reset()
+        super().reset()
+        # robot often clips into ground without this
+        self._p.resetBasePositionAndOrientation(self.robot.objects[0], [0, 0, 0.25], [0, 0, 0, 1])
+        self.robot.robot_specific_reset(self.scene._p)
+        s = self.robot.calc_state()
+        s = np.concatenate((s[0:1], s[3:]))
 
         dists = {obj_id: self.sq_dist_robot(pos) for obj_id, pos in self.stadium_scene.all_items.items()}
         fr, pr = self.get_food_obs(dists)
-        return np.concatenate([r, fr, pr])
+        return np.concatenate([s, fr, pr])
 
     def step(self, a):
         self.robot.apply_action(a)
         self.scene.global_step()
 
         state = self.robot.calc_state()  # also calculates self.joints_at_limit
+        state = np.concatenate((state[0:1], state[3:]))  # removing angle to target since there is no target
 
         # could do a more efficient method, but with around 20 items I wonder if it's worth it?
         dists = {obj_id: self.sq_dist_robot(pos) for obj_id, pos in self.stadium_scene.all_items.items()}
@@ -91,7 +97,6 @@ class AntGatherBulletEnv(AntBulletEnv):
         # removing angle to target and adding in yaw and food readings
         fr, pr = self.get_food_obs(dists)
         state = np.concatenate([state, fr, pr])
-
 
         # state[0] is body height above ground, body_rpy[1] is pitch
         self._alive = float(self.robot.alive_bonus(state[0] + self.robot.initial_z, self.robot.body_rpy[1]))

@@ -32,8 +32,9 @@ class SizeableEnclosedScene(Scene):
                              (world_p1, Point(world_p1.x, world_p2.y)),
                              (world_p2, Point(world_p2.x, world_p1.y)),
                              (world_p2, Point(world_p1.x, world_p2.y))]
+        self.box_bounds = []  # bounds of a single box shaped obstacle in the world
 
-    bounds = property(lambda self: self.world_bounds)
+    bounds = property(lambda self: self.world_bounds + self.box_bounds)
 
     def episode_restart(self, bullet_client):
         self._p = bullet_client

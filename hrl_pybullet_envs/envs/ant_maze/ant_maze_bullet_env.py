@@ -19,7 +19,7 @@ class AntMazeBulletEnv(AntBulletEnv):
     targets = [[6, 4], [0, 4], [-6, 4], eval_target]
 
     def __init__(self, n_bins: int = 8, sensor_range: float = 4, sensor_span: float = np.pi,
-                 target_encoding: PositionEncoding = PositionEncoding.normed_vec, tol=2, seed=None, debug=False):
+                 target_encoding: PositionEncoding = 0, tol=1, seed=None, debug=False):
         super().__init__()
         self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -6, -4, 0.25
 
@@ -28,6 +28,8 @@ class AntMazeBulletEnv(AntBulletEnv):
         self.sensor_span = sensor_span
 
         self.tol = tol
+        if isinstance(target_encoding, int):
+            target_encoding = PositionEncoding(target_encoding)
         self.target_encoding = target_encoding
         self.target: np.ndarray = np.array(AntMazeBulletEnv.eval_target)
 
@@ -56,7 +58,6 @@ class AntMazeBulletEnv(AntBulletEnv):
             angle_to_target = np.arctan2(*vec_to_target[::-1]) - self.robot_body.pose().rpy()[2]
             target_obs = [np.sin(angle_to_target), np.cos(angle_to_target)]
 
-        # TODO do we need the angle obs or can it be created outside?
         return np.concatenate((target_obs, [ant_obs[0]], ant_obs[3:], wall_obs))
         # return np.concatenate((ant_obs, wall_obs))
 
@@ -83,7 +84,9 @@ class AntMazeBulletEnv(AntBulletEnv):
         start_xyz = [self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z]
         self.target = AntMazeBulletEnv.targets[self.mpi_common_rand.randint(0, len(AntMazeBulletEnv.targets))]
         # self._p.resetBasePositionAndOrientation(self.robot.objects[0], start_xyz, [0, 0, 0, 1])
-        ant_obs = super().reset()
+        super().reset()
         self._p.resetBasePositionAndOrientation(self.robot.objects[0], start_xyz, [0, 0, 0, 1])
+        self.robot.robot_specific_reset(self.scene._p)
+        ant_obs = self.robot.calc_state()
 
         return self._get_obs(ant_obs)

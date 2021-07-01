@@ -33,7 +33,7 @@ class AntMazeBulletEnv(AntBulletEnv):
         self.target_encoding = target_encoding
         self.target: np.ndarray = np.array(AntMazeBulletEnv.eval_target)
 
-        self.mpi_common_rand, _ = gym.utils.seeding.np_random(seed)
+        self.rs, _ = gym.utils.seeding.np_random(seed)
 
         self.debug = debug
 
@@ -77,12 +77,17 @@ class AntMazeBulletEnv(AntBulletEnv):
 
         return obs, rew, d, i
 
+    def seed(self, seed=None):
+        super().seed(seed)
+        self.rs, seed = gym.utils.seeding.np_random(seed)
+        return [seed]
+
     def reset(self):
         if not hasattr(self, '_p'):
             super().reset()
 
         start_xyz = [self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z]
-        self.target = AntMazeBulletEnv.targets[self.mpi_common_rand.randint(0, len(AntMazeBulletEnv.targets))]
+        self.target = AntMazeBulletEnv.targets[self.rs.randint(0, len(AntMazeBulletEnv.targets))]
         # self._p.resetBasePositionAndOrientation(self.robot.objects[0], start_xyz, [0, 0, 0, 1])
         super().reset()
         self._p.resetBasePositionAndOrientation(self.robot.objects[0], start_xyz, [0, 0, 0, 1])

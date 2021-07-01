@@ -115,6 +115,9 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         else:
             self.set_target(*self.goals.pop())
 
+        self.potential = self.robot.calc_potential()  # avoid reward jump
+        return self.robot.calc_state()
+
     def _get_obs(self, env_obs):
         if self.use_sensor:
             env_obs = np.concatenate((env_obs, self.scene.sense_walls(self.n_bins,
@@ -143,7 +146,7 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         self.goals.clear()
         if not self.manual_goal_creation:  # creating a new goal on every reset if not manually creating the goal
             self.create_targets(self.max_targets)
-            self.next_target()
+            s = self.next_target()
 
         return self._get_obs(s)
 
@@ -154,7 +157,6 @@ class AntFlagrunBulletEnv(AntBulletEnv):
 
     def step(self, a):
         s, r, d, i = super().step(a)
-        s = self._get_obs(s)
         # state modifications: adding in vector towards goal
         # rel_dir_to_goal = np.array(self.goal) - self.robot.body_real_xyz[:2]
         # rel_dir_to_goal = rel_dir_to_goal / np.linalg.norm(rel_dir_to_goal)
@@ -178,7 +180,7 @@ class AntFlagrunBulletEnv(AntBulletEnv):
             r += AntFlagrunBulletEnv.goal_reach_rew
             try:
                 if self.switch_flag_on_collision:
-                    self.next_target()
+                    s = self.next_target()
                     i['target'] = self.goal
                     self.steps_since_goal_change = 0
             except IndexError:
@@ -186,10 +188,10 @@ class AntFlagrunBulletEnv(AntBulletEnv):
 
         if 0 < self.timeout <= self.steps_since_goal_change:
             try:
-                self.next_target()
+                s = self.next_target()
                 i['target'] = self.goal
                 self.steps_since_goal_change = 0
             except IndexError:
                 d = True
 
-        return s, r, d, i
+        return self._get_obs(s), r, d, i

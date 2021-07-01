@@ -121,6 +121,7 @@ class AntFlagrunBulletEnv(AntBulletEnv):
                                                                       self.sensor_span,
                                                                       self.sensor_range,
                                                                       self.robot.body_real_xyz[:2],
+                                                                      self.robot_body.pose().rpy()[2],
                                                                       self.debug)))
         return env_obs
 

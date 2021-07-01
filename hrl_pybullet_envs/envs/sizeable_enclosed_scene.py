@@ -59,15 +59,15 @@ class SizeableEnclosedScene(Scene):
                 self._p.changeDynamics(i, -1, lateralFriction=0.8, restitution=0.5)
                 self._p.configureDebugVisualizer(pybullet.COV_ENABLE_PLANAR_REFLECTION, i)
 
-    def sense_walls(self, s_bins, s_span, s_range, robot_pos, debug=False) -> List[float]:
+    def sense_walls(self, s_bins, s_span, s_range, robot_pos, rob_yaw, debug=False) -> List[float]:
         sensor = [0 for _ in range(s_bins)]
         # robot_pos = self.robot_body.pose().xyz()[:2]
         for i in range(s_bins):
             # each loop sensor is 1 more 'nth' of the sensor span - special case for 2pi because 0 == 2pi
             if s_span == 2 * np.pi:
-                polar = (s_range, ((i + 1) / s_bins) * s_span)
+                polar = (s_range, np.pi / 2 + rob_yaw + ((i + 1) / s_bins) * s_span)
             else:
-                polar = (s_range, (i / (s_bins - 1)) * s_span)
+                polar = (s_range, np.pi / 2 + rob_yaw + (i / (s_bins - 1)) * s_span)
             sensor_vec = np.array(robot_pos) + pol2cart(*polar)  # line coming from robot in dir
             # What quadrant the sensor would be in if it started from origin, used to avoid sensing behind robot
             sensor_quadrant = quadrant(Point(*(np.array(sensor_vec) - robot_pos)))

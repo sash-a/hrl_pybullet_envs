@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="hrl_pybullet_envs",
-    version="0.2.18",
+    version="0.2.19",
     author="Sasha Abramowitz",
     author_email="reallysasha@gmail.com",
     description="Locomotion HRL envs in pybullet",

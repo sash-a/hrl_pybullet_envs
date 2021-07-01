@@ -45,7 +45,7 @@ class AntMazeBulletEnv(AntBulletEnv):
 
     def _get_obs(self, ant_obs):
         wall_obs = self.scene.sense_walls(self.n_bins, self.sensor_span, self.sensor_range,
-                                          self.robot.body_real_xyz[:2], self.debug)
+                                          self.robot.body_real_xyz[:2], self.robot_body.pose().rpy()[2], self.debug)
 
         target_obs = []
         vec_to_target = self.target - self.robot_body.pose().xyz()[:2]

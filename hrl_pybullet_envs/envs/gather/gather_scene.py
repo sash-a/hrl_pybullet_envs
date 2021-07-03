@@ -112,4 +112,3 @@ class GatherScene(SizeableEnclosedScene):
             rew = 0
 
         return rew
-

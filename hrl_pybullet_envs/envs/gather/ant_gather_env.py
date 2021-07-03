@@ -5,6 +5,7 @@ from typing import Dict, Tuple
 import numpy as np
 from pybullet_envs.gym_locomotion_envs import AntBulletEnv
 
+from hrl_pybullet_envs import utils
 from hrl_pybullet_envs.envs.gather.gather_scene import GatherScene
 
 
@@ -65,11 +66,7 @@ class AntGatherBulletEnv(AntBulletEnv):
             self.stadium_scene.seed(seed)
 
     def reset(self):
-        super().reset()
-        # robot often clips into ground without this
-        self._p.resetBasePositionAndOrientation(self.robot.objects[0], [0, 0, 0.25], [0, 0, 0, 1])
-        self.robot.robot_specific_reset(self.scene._p)
-        s = self.robot.calc_state()
+        s = super().reset()
         s = np.concatenate((s[0:1], s[3:]))
 
         dists = {obj_id: self.sq_dist_robot(pos) for obj_id, pos in self.stadium_scene.all_items.items()}

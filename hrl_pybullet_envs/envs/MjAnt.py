@@ -83,14 +83,6 @@ class AntMjEnv(WalkerBaseBulletEnv):
         return state, reward, bool(done), {'ctrl_cost': ctrl_cost, 'survive_reward': survive_reward,
                                            'progress':  progress}
 
-    def reset(self):
-        if not hasattr(self, '_p'):
-            super().reset()
-
-        r = super().reset()
-        self._p.resetBasePositionAndOrientation(self.robot.objects[0], [*self.robot.start_pos, 0.25], [0, 0, 0, 1])
-        return r
-
     def update_foot_contacts(self):
         for i, f in enumerate(self.robot.feet):
             contact_ids = set((x[2], x[4]) for x in f.contact_list())

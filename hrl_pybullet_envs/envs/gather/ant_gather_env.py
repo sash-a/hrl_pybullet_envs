@@ -62,7 +62,7 @@ class AntGatherBulletEnv(AntBulletEnv):
 
     def seed(self, seed=None):
         super().seed(seed)
-        if hasattr(self, 'stadium_scene'):
+        if hasattr(self, 'stadium_scene') and self.stadium_scene is not None:
             self.stadium_scene.seed(seed)
 
     def reset(self):

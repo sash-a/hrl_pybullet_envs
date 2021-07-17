@@ -15,13 +15,13 @@ class AntMazeBulletEnv(AntBulletEnv):
     At evaluation time, we evaluate the agent only on its ability to reach (0,16). We define a “success” as being within
     an L2 distance of 5 from the target on the ultimate step of the episode. - Data efficient HRL
     """
-    eval_target = [6, -4]
-    targets = [[6, 4], [0, 4], [-6, 4], eval_target]
+    eval_target = [7.5, -4]
+    targets = [[7.5, 4], [-7.5, 4], eval_target]
 
-    def __init__(self, n_bins: int = 8, sensor_range: float = 4, sensor_span: float = np.pi,
-                 target_encoding: PositionEncoding = 0, tol=1, seed=None, debug=False):
+    def __init__(self, n_bins: int = 10, sensor_range: float = 5, sensor_span: float = 2 * np.pi,
+                 target_encoding: PositionEncoding = 0, tol=2, seed=None, debug=False):
         super().__init__()
-        self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -6, -4, 0.25
+        self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -7.5, -5, 0.25
 
         self.n_bins = n_bins
         self.sensor_range = float(sensor_range)

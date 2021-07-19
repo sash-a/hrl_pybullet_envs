@@ -19,7 +19,7 @@ class AntMazeBulletEnv(AntBulletEnv):
     targets = [[7.5, 4], [-7.5, 4], eval_target]
 
     def __init__(self, n_bins: int = 10, sensor_range: float = 5, sensor_span: float = 2 * np.pi,
-                 target_encoding: PositionEncoding = 0, tol=2, seed=None, debug=False):
+                 target_encoding: PositionEncoding = 0, tol=1.5, inner_rew_weight=0, seed=None, debug=False):
         super().__init__()
         self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -7.5, -5, 0.25
 
@@ -28,6 +28,8 @@ class AntMazeBulletEnv(AntBulletEnv):
         self.sensor_span = sensor_span
 
         self.tol = tol
+        self.inner_rew_weight = inner_rew_weight
+
         if isinstance(target_encoding, int):
             target_encoding = PositionEncoding(target_encoding)
         self.target_encoding = target_encoding
@@ -59,20 +61,17 @@ class AntMazeBulletEnv(AntBulletEnv):
             target_obs = [np.sin(angle_to_target), np.cos(angle_to_target)]
 
         return np.concatenate((target_obs, [ant_obs[0]], ant_obs[3:], wall_obs))
-        # return np.concatenate((ant_obs, wall_obs))
 
     def step(self, a):
         if self.debug:
             debug_draw_point(self.scene._p, *self.target, colour=[0.1, 0.5, 0.7])
-        ant_obs, ant_rew, d, i = super().step(a)
+        ant_obs, inner_rew, d, i = super().step(a)
         obs = self._get_obs(ant_obs)
 
-        dist = np.linalg.norm(self.target - self.robot_body.pose().xyz()[:2])
-        rew = -dist / self.scene.dt
+        rew = inner_rew * self.inner_rew_weight
 
-        # TODO possibly cache this to make it faster
-        if dist < self.tol:
-            rew += 10000
+        if self.robot.walk_target_dist < self.tol:
+            rew += 1
             d = True
 
         return obs, rew, d, i
@@ -88,8 +87,12 @@ class AntMazeBulletEnv(AntBulletEnv):
 
         start_xyz = [self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z]
         self.target = AntMazeBulletEnv.targets[self.rs.randint(0, len(AntMazeBulletEnv.targets))]
-        # self._p.resetBasePositionAndOrientation(self.robot.objects[0], start_xyz, [0, 0, 0, 1])
         super().reset()
+
+        # Allows for correct inner reward
+        self.walk_target_x, self.walk_target_y = self.target
+        self.robot.walk_target_x, self.robot.walk_target_y = self.target
+
         self._p.resetBasePositionAndOrientation(self.robot.objects[0], start_xyz, [0, 0, 0, 1])
         self.robot.robot_specific_reset(self.scene._p)
         ant_obs = self.robot.calc_state()

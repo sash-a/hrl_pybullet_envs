@@ -15,13 +15,13 @@ class AntMazeBulletEnv(AntBulletEnv):
     At evaluation time, we evaluate the agent only on its ability to reach (0,16). We define a “success” as being within
     an L2 distance of 5 from the target on the ultimate step of the episode. - Data efficient HRL
     """
-    eval_target = [7.5, -4]
-    targets = [[7.5, 4], [-7.5, 4], eval_target]
+    eval_target = [5, -3]
+    targets = [[-5, 3], [5, 3], eval_target]
 
     def __init__(self, n_bins: int = 10, sensor_range: float = 5, sensor_span: float = 2 * np.pi,
-                 target_encoding: PositionEncoding = 0, tol=1.5, inner_rew_weight=0, seed=None, debug=False):
+                 target_encoding: PositionEncoding = 0, tol=1.5, inner_rew_weight=0, seed=None, debug=0):
         super().__init__()
-        self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -7.5, -5, 0.25
+        self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -5, -3, 0.25
 
         self.n_bins = n_bins
         self.sensor_range = float(sensor_range)
@@ -49,7 +49,7 @@ class AntMazeBulletEnv(AntBulletEnv):
 
     def _get_obs(self, ant_obs):
         wall_obs = self.scene.sense_walls(self.n_bins, self.sensor_span, self.sensor_range,
-                                          self.robot.body_real_xyz[:2], self.robot_body.pose().rpy()[2], self.debug)
+                                          self.robot.body_real_xyz[:2], self.robot_body.pose().rpy()[2], self.debug > 1)
 
         target_obs = []
         vec_to_target = self.target - self.robot_body.pose().xyz()[:2]
@@ -63,7 +63,7 @@ class AntMazeBulletEnv(AntBulletEnv):
         return np.concatenate((target_obs, [ant_obs[0]], ant_obs[3:], wall_obs))
 
     def step(self, a):
-        if self.debug:
+        if self.debug > 0:
             debug_draw_point(self.scene._p, *self.target, colour=[0.1, 0.5, 0.7])
         ant_obs, inner_rew, d, i = super().step(a)
         obs = self._get_obs(ant_obs)

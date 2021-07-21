@@ -16,7 +16,7 @@ class AntMazeBulletEnv(AntBulletEnv):
     an L2 distance of 5 from the target on the ultimate step of the episode. - Data efficient HRL
     """
     eval_target = [5, -3]
-    targets = [[-5, 3], [5, 3], eval_target]
+    targets = [[-5, 3], [-2.5, 3], [0, 3], [2.5, 3], [5, 3], [5, 0], eval_target]
 
     def __init__(self, n_bins: int = 10, sensor_range: float = 5, sensor_span: float = 2 * np.pi,
                  target_encoding: PositionEncoding = 0, tol=1.5, inner_rew_weight=0, seed=None, debug=0):

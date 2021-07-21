@@ -74,7 +74,7 @@ class SizeableEnclosedScene(Scene):
             sensor_quadrant = quadrant(Point(*(np.array(sensor_vec) - robot_pos)))
 
             if debug:
-                self._p.addUserDebugLine([*robot_pos, 0], [*sensor_vec, 0], lifeTime=0.5)
+                self._p.addUserDebugLine([*robot_pos, 0], [*sensor_vec, 0], lifeTime=0.1)
 
             for line in self.bounds:  # Start and end points of bounding boxes around scene obstacles
                 # find intersection of sensor line and current bounding line

@@ -6,8 +6,8 @@ from hrl_pybullet_envs.utils import debug_draw_point, PositionEncoding
 from gym.spaces import Box
 import gym
 
-_eval_target = [5, -3]
-_targets = ([-5, 3], [0, 3], [5, 3], [5, 0], _eval_target)
+_eval_target = [-2, 3.5]
+_targets = ([2, -3.5], [2, 0], [2, 3.5], [0, 3.5], _eval_target)
 
 
 class AntMazeBulletEnv(AntBulletEnv):
@@ -19,7 +19,7 @@ class AntMazeBulletEnv(AntBulletEnv):
     def __init__(self, n_bins: int = 10, sensor_range: float = 5, sensor_span: float = 2 * np.pi, targets=_targets,
                  target_encoding: PositionEncoding = 0, tol=1.5, inner_rew_weight=0, seed=None, debug=0):
         super().__init__()
-        self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -5, -3, 0.25
+        self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -2, -3.5, 0.25
 
         self.n_bins = n_bins
         self.sensor_range = float(sensor_range)

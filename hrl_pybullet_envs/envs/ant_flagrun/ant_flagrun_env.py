@@ -4,10 +4,8 @@ import numpy as np
 from gym.spaces import Box
 from pybullet_envs.gym_locomotion_envs import AntBulletEnv, WalkerBaseBulletEnv
 
-from hrl_pybullet_envs.envs.MjAnt import AntMjEnv
-from hrl_pybullet_envs.envs.ant_maze.maze_utils import pol2cart, quadrant, Point, intersection
 from hrl_pybullet_envs.envs.sizeable_enclosed_scene import SizeableEnclosedScene
-from hrl_pybullet_envs.utils import get_sphere, debug_draw_point
+from hrl_pybullet_envs.utils import get_sphere
 
 
 class AntFlagrunBulletEnv(AntBulletEnv):

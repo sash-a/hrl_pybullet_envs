@@ -1,12 +1,10 @@
 from typing import List
 
-from enum import Enum
 import numpy as np
-from pybullet_envs.gym_locomotion_envs import AntBulletEnv
 
 from hrl_pybullet_envs.envs.MjAnt import AntMjEnv
 from hrl_pybullet_envs.envs.ant_maze.maze_scene import MazeScene
-from hrl_pybullet_envs.envs.ant_maze.maze_utils import pol2cart, Point, intersection, quadrant
+from hrl_pybullet_envs.envs.intersection_utils import pol2cart, Point, inf_intersection, quadrant
 from hrl_pybullet_envs.utils import debug_draw_point, PositionEncoding
 from gym.spaces import Box
 import gym
@@ -99,7 +97,7 @@ class AntMazeMjEnv(AntMjEnv):
 
             for line in self.scene.bounds:  # Start and end points of bounding boxes around scene obstacles
                 # find intersection of sensor line and current bounding line
-                inter = intersection(Point(*robot_pos), Point(*sensor_vec), *line)
+                inter = inf_intersection(Point(*robot_pos), Point(*sensor_vec), *line)
                 if inter is None:  # no intersection
                     continue
 

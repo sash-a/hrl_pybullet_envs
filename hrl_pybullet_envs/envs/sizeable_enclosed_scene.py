@@ -6,7 +6,7 @@ import pybullet
 from pybullet_envs.scene_abstract import Scene
 
 from hrl_pybullet_envs.assets import assets_dir
-from hrl_pybullet_envs.envs.ant_maze.maze_utils import Point, pol2cart, quadrant, intersection
+from hrl_pybullet_envs.envs.intersection_utils import Point, pol2cart, quadrant, inf_intersection
 from hrl_pybullet_envs.utils import debug_draw_point
 
 
@@ -78,7 +78,7 @@ class SizeableEnclosedScene(Scene):
 
             for line in self.bounds:  # Start and end points of bounding boxes around scene obstacles
                 # find intersection of sensor line and current bounding line
-                inter = intersection(Point(*robot_pos), Point(*sensor_vec), *line)
+                inter = inf_intersection(Point(*robot_pos), Point(*sensor_vec), *line)
                 if inter is None:  # no intersection
                     continue
 

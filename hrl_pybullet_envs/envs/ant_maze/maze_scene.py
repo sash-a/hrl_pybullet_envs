@@ -2,7 +2,7 @@ from os.path import join
 
 from hrl_pybullet_envs.assets import assets_dir
 from hrl_pybullet_envs.envs.sizeable_enclosed_scene import SizeableEnclosedScene
-from .maze_utils import Point
+from hrl_pybullet_envs.envs.intersection_utils import Point
 
 
 class MazeScene(SizeableEnclosedScene):

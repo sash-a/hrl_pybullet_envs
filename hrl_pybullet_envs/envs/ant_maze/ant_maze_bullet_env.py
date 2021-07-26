@@ -46,7 +46,9 @@ class AntMazeBulletEnv(AntBulletEnv):
 
         self.action_space = self.robot.action_space
 
-        self.observation_space = Box(-np.inf, np.inf, shape=(self.robot.observation_space.shape[0] - 2 + n_bins + 2,))
+        target_obs = n_bins if self.sense_target else 2
+        shape = (self.robot.observation_space.shape[0] - 2 + n_bins + target_obs,)
+        self.observation_space = Box(-np.inf, np.inf, shape=shape)
 
     def create_single_player_scene(self, bullet_client):
         self.stadium_scene = MazeScene(bullet_client, 9.8, 0.0165 / 4, 4)
@@ -122,12 +124,10 @@ class AntMazeBulletEnv(AntBulletEnv):
         bin_res = self.sensor_span / self.n_bins
 
         if self.robot.walk_target_dist > self.sensor_range:  # only include readings for objects within range
-            print('too far')
             return readings
 
         for p1, p2 in self.scene.box_bounds:  # check if the box occludes the goal
             if segment_intersection(rob_pos, target_pos, p1, p2):
-                print('occluded')
                 return readings
 
         # it is within distance and not occluded
@@ -143,7 +143,6 @@ class AntMazeBulletEnv(AntBulletEnv):
         # outside of sensor span - skip this
         half_span = self.sensor_span * 0.5
         if abs(angle) > half_span:
-            print('out of span')
             return readings
         bin_number = int((angle + half_span) / bin_res)
         intensity = 1.0 - self.robot.walk_target_dist / self.sensor_range
@@ -152,7 +151,6 @@ class AntMazeBulletEnv(AntBulletEnv):
         # useful debug
         if self.debug > 1 and intensity > 0:
             colour = [0, 0, 1]
-            print(f'target intensity:{intensity}')
             self._p.addUserDebugLine(self.robot_body.pose().xyz(), [target_pos.x, target_pos.y, 0.25], lifeTime=0.5,
                                      lineColorRGB=colour)
             self._p.addUserDebugText(f'{intensity:0.2f}', [target_pos.x, target_pos.y, 0.25], lifeTime=0.5,

@@ -48,6 +48,8 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         self._sq_dist_goal = 0  # distance to goal on step new goal received
         self._goal_start_pos = np.array([0, 0])  # position on step new goal received
 
+        self._rewarded = False  # true if rewarded for reaching current target
+
         if use_sensor:
             super_obs = self.robot.observation_space
             self.observation_space = Box(-np.inf, np.inf, (super_obs.shape[0] + sensor_bins,))
@@ -113,6 +115,7 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         else:
             self.set_target(*self.goals.pop())
 
+        self._rewarded = False
         self.potential = self.robot.calc_potential()  # avoid reward jump
         return self.robot.calc_state()
 
@@ -131,6 +134,7 @@ class AntFlagrunBulletEnv(AntBulletEnv):
         WalkerBaseBulletEnv.stall_torque_cost = 0  # -0.1
         WalkerBaseBulletEnv.joints_at_limit_cost = 0
 
+        self._rewarded = False
         # AntMjEnv.ctrl_cost_weight = 0
         # AntMjEnv.survive_reward_weight = 0
 
@@ -177,7 +181,10 @@ class AntFlagrunBulletEnv(AntBulletEnv):
             self.scene._p.addUserDebugLine(self.robot.body_real_xyz, [*self.goal, 0.5], lifeTime=0.1)
         # If close enough to target then give extra reward and move the target.
         if self.robot.walk_target_dist < self.tol:
-            r += AntFlagrunBulletEnv.goal_reach_rew
+            if not self._rewarded:
+                r += AntFlagrunBulletEnv.goal_reach_rew
+                self._rewarded = True
+
             try:
                 if self.switch_flag_on_collision:
                     s = self.next_target()

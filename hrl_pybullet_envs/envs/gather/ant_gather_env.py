@@ -17,7 +17,7 @@ class AntGatherBulletEnv(AntBulletEnv):
                  n_food=8,
                  n_poison=8,
                  world_size=(15, 15),
-                 n_bins=5,
+                 n_bins=10,
                  sensor_range=20.,
                  sensor_span=np.pi,
                  robot_coll_dist=1,  # this might be too easy

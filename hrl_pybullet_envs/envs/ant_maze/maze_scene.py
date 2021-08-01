@@ -7,7 +7,7 @@ from hrl_pybullet_envs.envs.intersection_utils import Point
 
 class MazeScene(SizeableEnclosedScene):
     def __init__(self, bullet_client, gravity, timestep, frame_skip):
-        world_size = (7, 10)
+        world_size = (8, 14)
         super().__init__(bullet_client, gravity, timestep, frame_skip, world_size, (0, 0))
         self.box_size = (4, 4)  # this doesn't affect the size, this is simply copying from the asset
         self.box_pos = (-(world_size[0] - self.box_size[0]) / 2, 0)

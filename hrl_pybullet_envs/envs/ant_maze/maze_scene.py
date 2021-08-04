@@ -32,7 +32,7 @@ class MazeScene(SizeableEnclosedScene):
 
     def episode_restart(self, bullet_client):
         if not self.loaded:
-            box = bullet_client.loadURDF(join(assets_dir, 'box.xml'), basePosition=(*self.box_pos, 1.5))
+            box = bullet_client.loadURDF(join(assets_dir, 'box.xml'), basePosition=(*self.box_pos, 1))
             self.ground_plane_mjcf += [box]
 
         super().episode_restart(bullet_client)

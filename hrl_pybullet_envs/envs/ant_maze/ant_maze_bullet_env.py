@@ -116,6 +116,7 @@ class AntMazeBulletEnv(AntBulletEnv):
 
     def get_target_sensor_obs(self) -> np.ndarray:
         """compute sensor readings for target"""
+        if self.n_bins <= 0: return np.array([])
         # first, obtain current orientation
         readings = np.zeros(self.n_bins)
         rob_pos = Point(*self.robot_body.pose().xyz()[:2])

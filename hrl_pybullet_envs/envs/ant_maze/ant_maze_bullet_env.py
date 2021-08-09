@@ -21,8 +21,8 @@ class AntMazeBulletEnv(AntBulletEnv):
     """
 
     def __init__(self, n_bins: int = 10, sensor_range: float = 5, sensor_span: float = 2 * np.pi, targets=_targets,
-                 target_encoding: PositionEncoding = 0, sense_target=False, tol=1.5, inner_rew_weight=0, seed=None,
-                 debug=0):
+                 target_encoding: PositionEncoding = 0, sense_target=False, sense_walls=True, done_at_target=True,
+                 max_steps=1000, tol=1.5, inner_rew_weight=0, seed=None, debug=0):
         super().__init__()
         self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -2, -4, 0.25
 
@@ -31,7 +31,11 @@ class AntMazeBulletEnv(AntBulletEnv):
         self.sensor_span = sensor_span
 
         self.targets = targets
+        self.sense_walls = sense_walls
         self.sense_target = sense_target
+        self.done_at_target = done_at_target
+        self.max_steps = max_steps
+        self.t = 0
         self.tol = tol
         self.inner_rew_weight = inner_rew_weight
 
@@ -46,8 +50,9 @@ class AntMazeBulletEnv(AntBulletEnv):
 
         self.action_space = self.robot.action_space
 
-        target_obs = n_bins if self.sense_target else 2
-        shape = (self.robot.observation_space.shape[0] - 2 + n_bins + target_obs,)
+        target_obs = n_bins if sense_target else 2
+        walls_obs = n_bins if sense_walls else 0
+        shape = (self.robot.observation_space.shape[0] - 2 + walls_obs + target_obs,)
         self.observation_space = Box(-np.inf, np.inf, shape=shape)
 
     def create_single_player_scene(self, bullet_client):
@@ -55,8 +60,11 @@ class AntMazeBulletEnv(AntBulletEnv):
         return self.stadium_scene
 
     def _get_obs(self, ant_obs):
-        wall_obs = self.scene.sense_walls(self.n_bins, self.sensor_span, self.sensor_range,
-                                          self.robot.body_real_xyz[:2], self.robot_body.pose().rpy()[2], self.debug > 1)
+        wall_obs = []
+        if self.sense_walls:
+            wall_obs = self.scene.sense_walls(self.n_bins, self.sensor_span, self.sensor_range,
+                                              self.robot.body_real_xyz[:2], self.robot_body.pose().rpy()[2],
+                                              self.debug > 1)
 
         if self.sense_target:
             target_obs = self.get_target_sensor_obs()
@@ -66,6 +74,7 @@ class AntMazeBulletEnv(AntBulletEnv):
         return np.concatenate(([ant_obs[0]], ant_obs[3:], target_obs, wall_obs))
 
     def step(self, a):
+        self.t += 1
         if self.debug > 0:
             debug_draw_point(self.scene._p, *self.target, colour=[0.1, 0.5, 0.7])
         ant_obs, inner_rew, d, i = super().step(a)
@@ -74,7 +83,11 @@ class AntMazeBulletEnv(AntBulletEnv):
         rew = inner_rew * self.inner_rew_weight
 
         if self.robot.walk_target_dist < self.tol:
-            rew += 1
+            if self.done_at_target or (not self.done_at_target and self.t == self.max_steps - 1):
+                rew += 1
+                d = True
+
+        if not self.done_at_target and self.t == self.max_steps - 1:
             d = True
 
         return obs, rew, d, i
@@ -88,6 +101,7 @@ class AntMazeBulletEnv(AntBulletEnv):
         if not hasattr(self, '_p'):
             super().reset()
 
+        self.t = 0
         start_xyz = [self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z]
         self.target = self.targets[self.rs.randint(0, len(self.targets))]
         super().reset()

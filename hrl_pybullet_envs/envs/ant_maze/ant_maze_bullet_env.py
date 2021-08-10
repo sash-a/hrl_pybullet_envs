@@ -11,7 +11,7 @@ from gym.spaces import Box
 import gym
 
 _eval_target = [-2, 4]
-_targets = ([2, -4], [2, 0], [2, 4], [0, 4], _eval_target)
+_targets = ([2, -3], [2, 0], [2, 3], _eval_target)
 
 
 class AntMazeBulletEnv(AntBulletEnv):
@@ -24,7 +24,7 @@ class AntMazeBulletEnv(AntBulletEnv):
                  target_encoding: PositionEncoding = 0, sense_target=False, sense_walls=True, done_at_target=True,
                  max_steps=1000, tol=1.5, inner_rew_weight=0, seed=None, debug=0):
         super().__init__()
-        self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -2, -4, 0.25
+        self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -2, -5, 0.25
 
         self.n_bins = n_bins
         self.sensor_range = float(sensor_range)
@@ -107,6 +107,7 @@ class AntMazeBulletEnv(AntBulletEnv):
         super().reset()
 
         # Allows for correct inner reward
+        print(self.target)
         self.walk_target_x, self.walk_target_y = self.target
         self.robot.walk_target_x, self.robot.walk_target_y = self.target
 

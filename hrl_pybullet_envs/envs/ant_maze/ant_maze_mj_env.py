@@ -24,7 +24,7 @@ class AntMazeMjEnv(AntMjEnv):
                  target_encoding: PositionEncoding = 0, tol=1.5, inner_rew_weight=0, seed=None,
                  debug=0):
         super().__init__()
-        self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -2, -4, 0.25
+        self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -2, -5, 0.25
 
         self.n_bins = n_bins
         self.sensor_range = float(sensor_range)

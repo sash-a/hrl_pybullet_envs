@@ -22,7 +22,7 @@ class AntMazeBulletEnv(AntBulletEnv):
 
     def __init__(self, n_bins: int = 10, sensor_range: float = 5, sensor_span: float = 2 * np.pi, targets=_targets,
                  target_encoding: PositionEncoding = 0, sense_target=False, sense_walls=True, done_at_target=True,
-                 max_steps=1000, tol=1.5, inner_rew_weight=0, seed=None, debug=0):
+                 max_steps=1000, tol=1.5, inner_rew_weight=0, targ_dist_rew=False, seed=None, debug=0):
         super().__init__()
         self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -2, -5, 0.25
 
@@ -38,6 +38,7 @@ class AntMazeBulletEnv(AntBulletEnv):
         self.t = 0
         self.tol = tol
         self.inner_rew_weight = inner_rew_weight
+        self.targ_dist_rew = targ_dist_rew
 
         if isinstance(target_encoding, int):
             target_encoding = PositionEncoding(target_encoding)
@@ -89,6 +90,9 @@ class AntMazeBulletEnv(AntBulletEnv):
 
         if not self.done_at_target and self.t == self.max_steps - 1:
             d = True
+
+        if self.targ_dist_rew and d:  # rewarding based on distance to target on final step
+            rew -= self.robot.walk_target_dist
 
         return obs, rew, d, i
 

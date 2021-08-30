@@ -22,7 +22,7 @@ class AntMazeBulletEnv(AntBulletEnv):
 
     def __init__(self, n_bins: int = 10, sensor_range: float = 5, sensor_span: float = 2 * np.pi, targets=_targets,
                  target_encoding: PositionEncoding = 0, sense_target=False, sense_walls=True, done_at_target=True,
-                 max_steps=1000, tol=1.5, inner_rew_weight=0, targ_dist_rew=False, seed=None, debug=0):
+                 max_steps=-1, tol=1.5, inner_rew_weight=0, targ_dist_rew=False, seed=None, debug=0):
         super().__init__()
         self.robot.start_pos_x, self.robot.start_pos_y, self.robot.start_pos_z = -2, -5, 0.25
 
@@ -88,7 +88,7 @@ class AntMazeBulletEnv(AntBulletEnv):
                 rew += 1
                 d = True
 
-        if not self.done_at_target and self.t == self.max_steps - 1:
+        if self.t == self.max_steps - 1:
             d = True
 
         if self.targ_dist_rew and d:  # rewarding based on distance to target on final step
@@ -111,7 +111,6 @@ class AntMazeBulletEnv(AntBulletEnv):
         super().reset()
 
         # Allows for correct inner reward
-        print(self.target)
         self.walk_target_x, self.walk_target_y = self.target
         self.robot.walk_target_x, self.robot.walk_target_y = self.target
 
